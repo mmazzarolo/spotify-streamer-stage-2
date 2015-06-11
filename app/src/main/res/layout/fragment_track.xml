@@ -1,0 +1,27 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/BaseRelativeLayout"
+    android:orientation="vertical"
+    tools:context="com.example.mazzdev.spotifystreamer.fragments.TrackFragment">
+
+    <ProgressBar
+        android:id="@+id/progressbar_track"
+        style="@style/ProgressBar"
+        android:layout_alignParentTop="true"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textview_track"
+        style="@style/MsgTheme"
+        android:text="@string/track_not_found"
+        android:layout_alignParentTop="true"
+        android:visibility="gone"/>
+
+    <ListView
+        android:id="@+id/listview_track"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </ListView>
+
+</RelativeLayout>
