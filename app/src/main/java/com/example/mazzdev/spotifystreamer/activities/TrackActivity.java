@@ -7,10 +7,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.example.mazzdev.spotifystreamer.R;
+import com.example.mazzdev.spotifystreamer.fragments.PlayFragment;
 import com.example.mazzdev.spotifystreamer.fragments.TrackFragment;
+import com.example.mazzdev.spotifystreamer.models.TrackItem;
+
+import java.util.ArrayList;
 
 
-public class TrackActivity extends AppCompatActivity {
+public class TrackActivity extends AppCompatActivity implements TrackFragment.Callback {
+
+    private boolean mTwoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,10 +26,8 @@ public class TrackActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
 
             Bundle args = new Bundle();
-            args.putString(TrackFragment.TRACK_SPOTIFY_ID,
-                    getIntent().getStringExtra("EXTRA_SPOTIFY_ID"));
-            args.putString(TrackFragment.TRACK_ARTIST_NAME,
-                    getIntent().getStringExtra("EXTRA_ARTIST_NAME"));
+            args.putParcelable(TrackFragment.TRACK_ARTIST_ITEM_KEY,
+                    getIntent().getParcelableExtra(TrackFragment.TRACK_ARTIST_ITEM_KEY));
 
             TrackFragment trackFragment = new TrackFragment();
             trackFragment.setArguments(args);
@@ -32,6 +36,29 @@ public class TrackActivity extends AppCompatActivity {
                     .add(R.id.track_container, trackFragment)
                     .commit();
         }
+    }
+
+    @Override
+    public void onTrackItemSelected(ArrayList<TrackItem> trackItemList, int position) {
+//        if (mTwoPane) {
+//            Bundle args = new Bundle();
+//            args.putString(TrackFragment.TRACK_SPOTIFY_ID_KEY, spotifyId);
+//            args.putString(TrackFragment.TRACK_ARTIST_NAME_KEY, artistName);
+//
+//            TrackFragment fragment = new TrackFragment();
+//            fragment.setArguments(args);
+//
+//            getSupportFragmentManager().beginTransaction()
+//                    .replace(R.id.track_container, fragment, TRACKFRAGMENT_TAG)
+//                    .commit();
+//        } else {
+            Intent intent = new Intent(this, PlayActivity.class);
+            Bundle extras = new Bundle();
+            extras.putParcelableArrayList(PlayFragment.PLAY_TRACK_LIST_KEY, trackItemList);
+            extras.putInt(PlayFragment.PLAY_POSITION_KEY, position);
+            intent.putExtras(extras);
+            startActivity(intent);
+//        }
     }
 
     @Override

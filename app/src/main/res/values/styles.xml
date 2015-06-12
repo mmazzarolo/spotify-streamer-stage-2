@@ -1,11 +1,11 @@
 <resources>
 
-    <style name="AppTheme" parent="Theme.AppCompat">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/material_blue_500</item>
         <item name="colorPrimaryDark">@color/material_blue_700</item>
-        <item name="colorAccent">@color/material_teal_A400</item>
-        <item name="android:windowBackground">@color/material_blue_grey_900</item>
-        <item name="android:textColorPrimary">@color/primary_text_default_material_dark</item>
+        <!--<item name="colorAccent">@color/material_teal_A400</item>-->
+        <!--<item name="android:windowBackground">@color/material_blue_grey_900</item>-->
+        <!--<item name="android:textColorPrimary">@color/primary_text_default_material_dark</item>-->
     </style>
 
     <style name="BaseRelativeLayout">
@@ -20,11 +20,12 @@
     <style name="MsgTheme">
         <item name="android:paddingTop">@dimen/padding_from_top</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textSize">@dimen/msg_size</item>
+        <!--<item name="android:textSize">@dimen/msg_size</item>-->
+        <item name="android:textAppearance">?android:textAppearanceMedium</item>
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_centerInParent">true</item>
-        <item name="android:textColor">@color/primary_text_default_material_dark</item>
+        <!--<item name="android:textColor">@color/primary_text_default_material_dark</item>-->
     </style>
 
     <style name="ProgressBar">
@@ -33,6 +34,13 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:indeterminate">true</item>
         <item name="android:layout_centerInParent">true</item>
+    </style>
+
+    <style name="ArtistItemListStyle">
+    </style>
+
+    <!-- Settings activity theme. -->
+    <style name="SettingsTheme" parent="AppTheme">
     </style>
 
 

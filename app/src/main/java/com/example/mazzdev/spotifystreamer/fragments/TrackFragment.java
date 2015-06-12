@@ -19,6 +19,7 @@ import android.widget.Toast;
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.Utility;
 import com.example.mazzdev.spotifystreamer.adapters.TrackListAdapter;
+import com.example.mazzdev.spotifystreamer.models.ArtistItem;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
 
 import java.util.ArrayList;
@@ -42,26 +43,46 @@ import retrofit.RetrofitError;
  */
 public class TrackFragment extends Fragment {
 
-    public static final String TRACK_SPOTIFY_ID = "SPOTIFY_ID";
-    public static final String TRACK_ARTIST_NAME = "ARTIST_NAME";
-
     private ArrayList<TrackItem> mTrackItemList;
+    private ArrayList<String> mPreviewURLList;
     private TrackListAdapter mTrackListAdapter;
     private String mArtistName;
     private String mArtistSpotifyID;
+    private int mPosition;
+
+    private static final String TRACK_ITEM_LIST_KEY = "TRACK_ITEM_LIST";
+    private static final String TRACK_POSITION_KEY = "TRACK_POSITION";
+
+    public static final String TRACK_ARTIST_ITEM_KEY = "TRACK_ARTIST_ITEM_KEY";
 
     @InjectView(R.id.progressbar_track) ProgressBar progressBarTrack;
     @InjectView(R.id.textview_track) TextView textViewTrack;
     @InjectView(R.id.listview_track) ListView listViewTrack;
 
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface Callback {
+        void onTrackItemSelected(ArrayList<TrackItem> trackItemList, int position);
+    }
+
     // If the activity has been re-created get the list back from saveInstanceState
     @Override
     public void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (savedInstanceState == null || !savedInstanceState.containsKey("LIST")) {
+        // Restoring the ListView (if the activity has been re-created)
+        if (savedInstanceState == null || !savedInstanceState.containsKey(TRACK_ITEM_LIST_KEY)) {
             mTrackItemList = new ArrayList<TrackItem>();
         } else {
-            mTrackItemList = savedInstanceState.getParcelableArrayList("LIST");
+            mTrackItemList = savedInstanceState.getParcelableArrayList(TRACK_ITEM_LIST_KEY);
+        }
+        // Restoring the selected position (if the activity has been re-created)
+        if (savedInstanceState == null || !savedInstanceState.containsKey(TRACK_POSITION_KEY)) {
+            mPosition = ListView.INVALID_POSITION;
+        } else {
+            mPosition = savedInstanceState.getInt(TRACK_POSITION_KEY);
         }
     }
 
@@ -72,8 +93,9 @@ public class TrackFragment extends Fragment {
         // Getting intent bundle
         Bundle args = getArguments();
         if (args != null) {
-            mArtistSpotifyID = args.getString("SPOTIFY_ID");
-            mArtistName = args.getString("ARTIST_NAME");
+            ArtistItem artistItem = args.getParcelable(TRACK_ARTIST_ITEM_KEY);
+            mArtistSpotifyID = artistItem.getSpotifyId();
+            mArtistName = artistItem.getName();
         }
 
         // Inflating the layout
@@ -87,21 +109,16 @@ public class TrackFragment extends Fragment {
                 mTrackItemList);
         listViewTrack.setAdapter(mTrackListAdapter);
 
-        // If the activity has not been re-created starts a search for the top tracks
-//        if (savedInstanceState == null || !savedInstanceState.containsKey("LIST")) {
-//            FetchTrackTask fetchTrackTask = new FetchTrackTask();
-//            fetchTrackTask.execute(mArtistSpotifyID);
-//        }
+//        listViewTrack.post(new Runnable() {
+//            @Override
+//            public void run() {
+//                listViewTrack.smoothScrollToPosition(mPosition);
+//            }
+//        });
+
+        listViewTrack.post(() -> listViewTrack.smoothScrollToPosition(mPosition));
 
         listViewTrack.setOnItemClickListener(onTrackItemClickListener);
-
-        // Getting intent bundle
-//        Intent intent = getActivity().getIntent();
-//        if (intent != null && intent.hasExtra("EXTRA_SPOTIFY_ID") && intent.hasExtra("EXTRA_ARTIST_NAME") ) {
-//            mArtistSpotifyID = intent.getStringExtra("EXTRA_SPOTIFY_ID");
-//            mArtistName = intent.getStringExtra("EXTRA_ARTIST_NAME");
-//            searchTracks(mArtistSpotifyID);
-//        }
 
         return rootView;
     }
@@ -109,9 +126,8 @@ public class TrackFragment extends Fragment {
     private OnItemClickListener onTrackItemClickListener = new OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-            String msg = "TO-DO: Starts a preview of " +
-                    mTrackListAdapter.getItem(position).getTrackName();
-            Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
+            mPosition = position;
+            ((Callback) getActivity()).onTrackItemSelected(mTrackItemList, position);
         }
     };
 
@@ -130,7 +146,8 @@ public class TrackFragment extends Fragment {
     // Saving the current parcelable item list
     @Override
     public void onSaveInstanceState(Bundle savedState) {
-        savedState.putParcelableArrayList("LIST", mTrackItemList);
+        savedState.putParcelableArrayList(TRACK_ITEM_LIST_KEY, mTrackItemList);
+        savedState.putInt(TRACK_POSITION_KEY, mPosition);
         super.onSaveInstanceState(savedState);
     }
 

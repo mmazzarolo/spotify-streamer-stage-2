@@ -37,10 +37,9 @@
 
     <ListView
         android:id="@+id/listview_artist"
+        style="@style/ArtistItemListStyle"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/searchview_artist">
-
-    </ListView>
+        android:layout_below="@+id/searchview_artist" />
 
 </RelativeLayout>

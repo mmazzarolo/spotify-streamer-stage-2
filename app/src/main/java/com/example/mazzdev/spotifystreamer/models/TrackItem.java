@@ -15,15 +15,17 @@ public class TrackItem implements Parcelable {
 
     private String trackName;
     private String albumName;
+    private String artistName;
     private String spotifyId;
     private String thumbnailSmallURL;
     private String thumbnailLargeURL; // TO-DO: STAGE 2
     private String previewURL;
 
-    public TrackItem(String trackName, String albumName, String spotifyId,
+    public TrackItem(String trackName, String albumName, String artistName, String spotifyId,
                      String thumbnailSmallURL, String thumbnailLargeURL, String previewURL) {
         this.trackName = trackName;
         this.albumName = albumName;
+        this.artistName = artistName;
         this.spotifyId = spotifyId;
         this.thumbnailSmallURL = thumbnailSmallURL;
         this.thumbnailLargeURL = thumbnailLargeURL;
@@ -33,6 +35,7 @@ public class TrackItem implements Parcelable {
     public TrackItem(Track track) {
         this.trackName = track.name;
         this.albumName = track.album.name;
+        this.artistName = track.artists.get(0).name;
         this.spotifyId = track.id;
         this.thumbnailSmallURL = null;
         this.thumbnailLargeURL = null;
@@ -69,6 +72,7 @@ public class TrackItem implements Parcelable {
     private TrackItem(Parcel in) {
         this.trackName = in.readString();
         this.albumName = in.readString();
+        this.artistName = in.readString();
         this.spotifyId = in.readString();
         this.thumbnailSmallURL = in.readString();
         this.thumbnailLargeURL = in.readString();
@@ -89,6 +93,14 @@ public class TrackItem implements Parcelable {
 
     public void setAlbumName(String albumName) {
         this.albumName = albumName;
+    }
+
+    public String getArtistName() {
+        return artistName;
+    }
+
+    public void setArtistName(String artistName) {
+        this.artistName = artistName;
     }
 
     public String getSpotifyId() {
@@ -127,9 +139,14 @@ public class TrackItem implements Parcelable {
         return thumbnailSmallURL != null;
     }
 
+    public boolean hasLargeThumbnail() {
+        return thumbnailLargeURL != null;
+    }
+
     public void writeToParcel(Parcel out, int flags) {
         out.writeString(trackName);
         out.writeString(albumName);
+        out.writeString(artistName);
         out.writeString(spotifyId);
         out.writeString(thumbnailSmallURL);
         out.writeString(thumbnailLargeURL);

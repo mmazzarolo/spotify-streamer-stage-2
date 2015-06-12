@@ -1,0 +1,72 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/BaseRelativeLayout"
+    android:orientation="vertical"
+    android:id="@+id/fragment_play_linearlayout"
+    tools:context=".PlayActivityFragment">
+
+    <TextView
+        android:id="@+id/fragment_play_textview_artist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/fragment_play_textview_album"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAppearance="?android:textAppearanceSmall"
+        android:textStyle="italic" />
+
+    <ImageView
+        android:id="@+id/fragment_play_imageview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="@string/content_description_iv_album" />
+
+    <TextView
+        android:id="@+id/fragment_play_textview_track"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textStyle="bold" />
+
+    <SeekBar
+        android:id="@+id/fragment_play_seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" />
+
+    <LinearLayout
+        android:id="@+id/fragment_play_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center_horizontal" >
+
+        <Button
+            android:id="@+id/fragment_play_button_prev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:drawable/ic_media_previous" />
+
+        <Button
+            android:id="@+id/fragment_play_button_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:drawable/ic_media_play" />
+
+        <Button
+            android:id="@+id/fragment_play_button_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:drawable/ic_media_next" />
+
+    </LinearLayout>
+
+</LinearLayout>

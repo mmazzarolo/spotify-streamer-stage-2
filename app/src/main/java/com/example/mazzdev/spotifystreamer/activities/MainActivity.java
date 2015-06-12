@@ -10,6 +10,7 @@ import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.Utility;
 import com.example.mazzdev.spotifystreamer.fragments.MainFragment;
 import com.example.mazzdev.spotifystreamer.fragments.TrackFragment;
+import com.example.mazzdev.spotifystreamer.models.ArtistItem;
 
 
 public class MainActivity extends AppCompatActivity implements MainFragment.Callback {
@@ -23,6 +24,9 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mCountry = Utility.getPreferredCountry(this);
+
         if (findViewById(R.id.track_container) != null) {
             // The track_container view will be present only in the large-screen layouts
             // (res/layout-sw600dp). If this view is present, then the activity should be
@@ -42,11 +46,10 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
     }
 
     @Override
-    public void onArtistItemSelected(String spotifyId, String artistName) {
+    public void onArtistItemSelected(ArtistItem artistItem) {
         if (mTwoPane) {
             Bundle args = new Bundle();
-            args.putString(TrackFragment.TRACK_SPOTIFY_ID, spotifyId);
-            args.putString(TrackFragment.TRACK_ARTIST_NAME, artistName);
+            args.putParcelable(TrackFragment.TRACK_ARTIST_ITEM_KEY, artistItem);
 
             TrackFragment fragment = new TrackFragment();
             fragment.setArguments(args);
@@ -57,8 +60,7 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
         } else {
             Intent intent = new Intent(this, TrackActivity.class);
             Bundle extras = new Bundle();
-            extras.putString("EXTRA_SPOTIFY_ID", spotifyId);
-            extras.putString("EXTRA_ARTIST_NAME", artistName);
+            extras.putParcelable(TrackFragment.TRACK_ARTIST_ITEM_KEY, artistItem);
             intent.putExtras(extras);
             startActivity(intent);
         }
