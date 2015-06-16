@@ -23,7 +23,8 @@
         <activity
             android:name=".activities.TrackActivity"
             android:label="@string/title_activity_track"
-            android:parentActivityName=".activities.MainActivity" >
+            android:parentActivityName=".activities.MainActivity"
+            android:launchMode="singleTop" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".activities.MainActivity" />

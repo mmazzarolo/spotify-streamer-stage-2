@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
         if (country != null && !country.equals(mCountry)) {
             MainFragment mainFragment =
                     (MainFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_main);
-            if ( null != mainFragment ) {
+            if (null != mainFragment) {
                 mainFragment.onCountryChanged();
             }
             mCountry = country;

@@ -10,11 +10,12 @@ import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.MediaController.MediaPlayerControl;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ import android.widget.TextView;
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
 import com.example.mazzdev.spotifystreamer.services.MusicService;
+import com.example.mazzdev.spotifystreamer.views.MediaControllerView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -32,17 +34,14 @@ import butterknife.InjectView;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PlayFragment extends Fragment implements MediaPlayerControl {
+public class PlayFragment extends Fragment {
 
 
     private ArrayList<TrackItem> mTrackItemList;
     private int mPosition;
-    private ArrayList<String> mTrackURLList;
 
     private MusicService mMusicService;
-    private boolean mIsServiceBound =false;
-    private MediaController mMediaController;
-    private boolean paused=false, playbackPaused=false;
+    private MediaControllerView mMediaControllerView;
     private Intent playIntent;
 
     public static final String PLAY_TRACK_LIST_KEY = "PLAY_TRACK_LIST";
@@ -52,29 +51,26 @@ public class PlayFragment extends Fragment implements MediaPlayerControl {
     @InjectView(R.id.fragment_play_textview_artist) TextView textViewArtist;
     @InjectView(R.id.fragment_play_textview_album) TextView textViewAlbum;
     @InjectView(R.id.fragment_play_textview_track) TextView textViewTrack;
-    @InjectView(R.id.fragment_play_button_next) Button buttonNext;
-    @InjectView(R.id.fragment_play_button_prev) Button buttonPrev;
-    @InjectView(R.id.fragment_play_button_play) Button buttonPlay;
-
+    @InjectView(R.id.fragment_play_linearlayout) LinearLayout linearLayout;
     /**
      * Fragment lifecycle methods
      */
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mTrackURLList = new ArrayList<String>();
-
         Bundle args = getArguments();
         if (args != null) {
             mTrackItemList = args.getParcelableArrayList(PLAY_TRACK_LIST_KEY);
-            for (TrackItem trackItem : mTrackItemList) {
-                mTrackURLList.add(trackItem.getPreviewURL());
-            }
             mPosition = args.getInt(PLAY_POSITION_KEY);
         }
         setController();
+
+        if (playIntent == null) {
+            playIntent = new Intent(getActivity(), MusicService.class);
+            getActivity().bindService(playIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+            getActivity().startService(playIntent);
+        }
     }
 
     @Override
@@ -88,7 +84,7 @@ public class PlayFragment extends Fragment implements MediaPlayerControl {
         return rootView;
     }
 
-    public void updateViewInfo (int position) {
+    public void updateViewInfo(int position) {
         textViewArtist.setText(mTrackItemList.get(position).getArtistName());
         textViewAlbum.setText(mTrackItemList.get(position).getAlbumName());
         textViewTrack.setText(mTrackItemList.get(position).getTrackName());
@@ -102,17 +98,19 @@ public class PlayFragment extends Fragment implements MediaPlayerControl {
     @Override
     public void onStart() {
         super.onStart();
-        if (playIntent == null) {
-            playIntent = new Intent(getActivity(), MusicService.class);
-            getActivity().bindService(playIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
-            getActivity().startService(playIntent);
-        }
     }
 
     @Override
     public void onPause(){
         super.onPause();
-//        paused = true;
+        getActivity().unbindService(mServiceConnection);
+        try {
+            getActivity().unregisterReceiver(onPrepareReceiver);
+            onPrepareReceiver = null;
+        } catch (Exception e) {
+            Log.e("AAAAAAAAAAAAA", e.getMessage());
+        }
+        mMediaControllerView.hide();
     }
 
     @Override
@@ -120,17 +118,12 @@ public class PlayFragment extends Fragment implements MediaPlayerControl {
         super.onResume();
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(onPrepareReceiver,
                 new IntentFilter("MEDIA_PLAYER_PREPARED"));
-//        if(paused){
             setController();
-//        mMediaController.show(0);
-//        mMediaController.requestFocus();
-//            paused=false;
-//        }
     }
 
     @Override
     public void onStop() {
-        mMediaController.hide();
+        mMediaControllerView.hide();
         super.onStop();
     }
 
@@ -147,146 +140,47 @@ public class PlayFragment extends Fragment implements MediaPlayerControl {
         public void onServiceConnected(ComponentName name, IBinder service) {
             MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
             mMusicService = binder.getService();
-            mMusicService.setTrackURLList(mTrackURLList);
-            mMusicService.setTrackPosition(0);
-            mMusicService.playTrack();
-            mIsServiceBound = true;
+            mMediaControllerView.setIsServiceBound(true);
+            mMediaControllerView.setMusicService(mMusicService);
+            startPlaying();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            mIsServiceBound = false;
+            mMediaControllerView.setIsServiceBound(false);
         }
     };
+
+    private void startPlaying() {
+        mMusicService.setTrackItemList(mTrackItemList);
+        mMusicService.setTrackPosition(mPosition);
+        mMusicService.playTrack();
+    }
 
     // Broadcast receiver to determine when music player has been prepared
     private BroadcastReceiver onPrepareReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context c, Intent i) {
-            // When music player has been prepared, show controller
-            mMediaController.show(0);
-            mMediaController.requestFocus();
+            if (i.getAction().equals("MEDIA_PLAYER_PREPARED")) {
+                Log.v("PlayFragment", "MEDIA_PLAYER_PREPARED");
+                mPosition = mMusicService.getTrackPosition();
+                setController();
+                updateViewInfo(mPosition);
+                mMediaControllerView.show(0);
+                mMediaControllerView.requestFocus();
+            }
         }
     };
-
-    public void trackPicked(int position){
-        mMusicService.setTrackPosition(position);
-        mMusicService.playTrack();
-//        if (playbackPaused) {
-//            setController();
-//            playbackPaused = false;
-//        }
-//        mMediaController.show(0);
-    }
 
     /**
      * Controller managements methods
      */
     private void setController(){
-        if (mMediaController == null) mMediaController = new MediaController(getActivity());
-//        mMediaController.setPrevNextListeners(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                playNext();
-//            }
-//        }, new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                playPrev();
-//            }
-//        });
-        mMediaController.setPrevNextListeners(v -> playNext(), v -> playPrev());
-        mMediaController.setMediaPlayer(this);
-        mMediaController.setAnchorView(getActivity().findViewById(R.id.fragment_play_linearlayout));
-        mMediaController.setEnabled(true);
-    }
-
-    private void playNext(){
-        mMusicService.playNext();
-        if(playbackPaused){
-            setController();
-            playbackPaused=false;
+        if (mMediaControllerView == null) {
+            mMediaControllerView = new MediaControllerView(getActivity(), false);
         }
-        mMediaController.show(0);
+        mMediaControllerView.setMusicService(mMusicService);
+        mMediaControllerView.setAnchorView(linearLayout);
+        mMediaControllerView.setEnabled(true);
     }
-
-    private void playPrev(){
-        mMusicService.playPrev();
-        if(playbackPaused){
-            setController();
-            playbackPaused=false;
-        }
-        mMediaController.show(0);
-    }
-
-    /**
-     * MediaController methods
-     */
-    @Override
-    public void start() {
-        mMusicService.start();
-    }
-
-    @Override
-    public void pause() {
-        playbackPaused = true;
-        mMusicService.pausePlayer();
-    }
-
-    @Override
-    public int getDuration() {
-        if (mMusicService != null && mIsServiceBound && mMusicService.isPlaying()) {
-            return mMusicService.getDuration();
-        } else {
-            return 0;
-        }
-    }
-
-    @Override
-    public int getCurrentPosition() {
-        if (mMusicService != null && mIsServiceBound && mMusicService.isPlaying()) {
-            return mMusicService.getCurrentPosition();
-        } else {
-            return 0;
-        }
-    }
-
-    @Override
-    public void seekTo(int pos) {
-        mMusicService.seek(pos);
-    }
-
-    @Override
-    public boolean isPlaying() {
-        if (mMusicService != null && mIsServiceBound) {
-            return mMusicService.isPlaying();
-        }
-        return false;
-    }
-
-    @Override
-    public int getBufferPercentage() {
-        return 0;
-    }
-
-    @Override
-    public boolean canPause() {
-        return false;
-    }
-
-    @Override
-    public boolean canSeekBackward() {
-        return false;
-    }
-
-    @Override
-    public boolean canSeekForward() {
-        return false;
-    }
-
-    @Override
-    public int getAudioSessionId() {
-        return 0;
-    }
-
 }

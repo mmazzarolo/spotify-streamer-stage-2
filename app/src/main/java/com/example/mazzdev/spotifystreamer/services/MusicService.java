@@ -17,6 +17,7 @@ import android.util.Log;
 
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.activities.MainActivity;
+import com.example.mazzdev.spotifystreamer.models.TrackItem;
 
 import java.util.ArrayList;
 
@@ -29,7 +30,7 @@ public class MusicService extends Service implements
 
     private MediaPlayer mMediaPlayer;
 
-    private ArrayList<String> mTrackURLList;
+    private ArrayList<TrackItem> mTrackItemList;
     private int mTrackPosition;
 
     private final IBinder mMusicBinder = new MusicBinder();
@@ -43,12 +44,20 @@ public class MusicService extends Service implements
         initMusicPlayer();
     }
 
-    public void setTrackURLList(ArrayList<String> trackURLList) {
-        mTrackURLList = trackURLList;
+    public void setTrackItemList(ArrayList<TrackItem> trackItemList) {
+        mTrackItemList = trackItemList;
+    }
+
+    public ArrayList<TrackItem> getTrackItemList() {
+        return mTrackItemList;
     }
 
     public void setTrackPosition(int trackPosition) {
         mTrackPosition = trackPosition;
+    }
+
+    public int getTrackPosition() {
+        return mTrackPosition;
     }
 
     public void initMusicPlayer(){
@@ -81,7 +90,7 @@ public class MusicService extends Service implements
         mMediaPlayer.reset();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         try {
-            mMediaPlayer.setDataSource(mTrackURLList.get(mTrackPosition));
+            mMediaPlayer.setDataSource(mTrackItemList.get(mTrackPosition).getPreviewURL());
         } catch(Exception e){
             Log.e("MUSIC SERVICE", "Error setting data source", e);
         }
@@ -92,6 +101,9 @@ public class MusicService extends Service implements
     public void onCompletion(MediaPlayer mp) {
         mp.reset();
         playNext();
+        // Broadcast intent to activity to let it know the media player has been prepared
+        Intent onCompletedIntent = new Intent("MEDIA_PLAYER_COMPLETED");
+        LocalBroadcastManager.getInstance(this).sendBroadcast(onCompletedIntent);
     }
 
     @Override
@@ -151,14 +163,14 @@ public class MusicService extends Service implements
     public void playPrev(){
         mTrackPosition--;
         if(mTrackPosition < 0) {
-            mTrackPosition = mTrackURLList.size() - 1;
+            mTrackPosition = mTrackItemList.size() - 1;
         }
         playTrack();
     }
 
     public void playNext(){
         mTrackPosition ++;
-        if (mTrackPosition >= mTrackURLList.size()) {
+        if (mTrackPosition >= mTrackItemList.size()) {
             mTrackPosition = 0;
         }
         playTrack();

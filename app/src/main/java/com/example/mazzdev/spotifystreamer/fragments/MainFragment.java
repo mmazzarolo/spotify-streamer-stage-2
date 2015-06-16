@@ -123,8 +123,6 @@ public class MainFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             ArtistItem artistItem = mArtistListAdapter.getItem(position);
-//            String artistName = mArtistListAdapter.getItem(position).getName();
-//            ((Callback) getActivity()).onArtistItemSelected(spotifyId, artistName);
             ((Callback) getActivity()).onArtistItemSelected(artistItem);
             mPosition = position;
         }
