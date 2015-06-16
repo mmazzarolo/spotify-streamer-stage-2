@@ -1,72 +1,109 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     style="@style/BaseRelativeLayout"
     android:orientation="vertical"
-    android:id="@+id/fragment_play_linearlayout"
+    android:id="@+id/fragment_play_relativelayout"
     tools:context=".PlayActivityFragment">
 
     <TextView
         android:id="@+id/fragment_play_textview_artist"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
         android:textAppearance="?android:textAppearanceMedium"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/fragment_play_textview_album"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
         android:textAppearance="?android:textAppearanceSmall"
-        android:textStyle="italic" />
+        android:textStyle="italic"
+        android:layout_below="@+id/fragment_play_textview_artist" />
 
     <ImageView
         android:id="@+id/fragment_play_imageview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:contentDescription="@string/content_description_iv_album" />
+        android:gravity="center_horizontal"
+        android:contentDescription="@string/content_description_iv_album"
+        android:layout_below="@+id/fragment_play_textview_album" />
 
     <TextView
         android:id="@+id/fragment_play_textview_track"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
         android:textAppearance="?android:textAppearanceMedium"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:layout_below="@+id/fragment_play_imageview" />
 
-    <!--<SeekBar-->
-        <!--android:id="@+id/fragment_play_seekbar"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_gravity="center_horizontal" />-->
+    <SeekBar
+        android:id="@+id/fragment_play_seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:layout_below="@+id/fragment_play_textview_track" />
 
-    <!--<LinearLayout-->
-        <!--android:id="@+id/fragment_play_controls"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:orientation="horizontal"-->
-        <!--android:layout_gravity="center_horizontal" >-->
+    <ProgressBar
+        android:id="@+id/fragment_play_progressbar"
+        style="@style/ProgressBar"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal" />
 
-        <!--<Button-->
-            <!--android:id="@+id/fragment_play_button_prev"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:background="@android:drawable/ic_media_previous" />-->
+    <TextView
+        android:id="@+id/fragment_play_textview_time_current"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceSmall"
+        android:layout_below="@+id/fragment_play_seekbar"
+        android:layout_alignParentLeft="true" />
 
-        <!--<Button-->
-            <!--android:id="@+id/fragment_play_button_play"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:background="@android:drawable/ic_media_play" />-->
+    <TextView
+        android:id="@+id/fragment_play_textview_time_max"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceSmall"
+        android:layout_below="@+id/fragment_play_seekbar"
+        android:layout_alignParentRight="true" />
 
-        <!--<Button-->
-            <!--android:id="@+id/fragment_play_button_next"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:background="@android:drawable/ic_media_next" />-->
+    <LinearLayout
+        android:id="@+id/fragment_play_controls"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:visibility="gone" >
 
-    <!--</LinearLayout>-->
+        <Button
+            android:id="@+id/fragment_play_button_prev"
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:background="@android:drawable/ic_media_previous" />
 
-</LinearLayout>
+        <Button
+            android:id="@+id/fragment_play_button_play"
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:background="@android:drawable/ic_media_play" />
+
+        <Button
+            android:id="@+id/fragment_play_button_next"
+            android:layout_width="80px"
+            android:layout_height="80px"
+            android:background="@android:drawable/ic_media_next" />
+
+    </LinearLayout>
+
+</RelativeLayout>

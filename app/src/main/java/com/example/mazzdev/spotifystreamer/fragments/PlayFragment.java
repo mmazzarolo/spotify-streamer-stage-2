@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.drawable.Drawable;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -14,13 +16,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.MediaController;
-import android.widget.MediaController.MediaPlayerControl;
+import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.mazzdev.spotifystreamer.R;
+import com.example.mazzdev.spotifystreamer.activities.PlayActivity;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
 import com.example.mazzdev.spotifystreamer.services.MusicService;
 import com.example.mazzdev.spotifystreamer.views.MediaControllerView;
@@ -36,13 +40,12 @@ import butterknife.InjectView;
  */
 public class PlayFragment extends Fragment {
 
-
     private ArrayList<TrackItem> mTrackItemList;
     private int mPosition;
 
     private MusicService mMusicService;
-    private MediaControllerView mMediaControllerView;
-    private Intent playIntent;
+    private boolean mIsServiceBound;;
+    private Handler mHandler = null;
 
     public static final String PLAY_TRACK_LIST_KEY = "PLAY_TRACK_LIST";
     public static final String PLAY_POSITION_KEY = "PLAY_POSITION";
@@ -51,37 +54,52 @@ public class PlayFragment extends Fragment {
     @InjectView(R.id.fragment_play_textview_artist) TextView textViewArtist;
     @InjectView(R.id.fragment_play_textview_album) TextView textViewAlbum;
     @InjectView(R.id.fragment_play_textview_track) TextView textViewTrack;
-    @InjectView(R.id.fragment_play_linearlayout) LinearLayout linearLayout;
+    @InjectView(R.id.fragment_play_textview_time_current) TextView textViewTimeCurrent;
+    @InjectView(R.id.fragment_play_textview_time_max) TextView textViewTimeMax;
+    @InjectView(R.id.fragment_play_button_prev) Button buttonPrev;
+    @InjectView(R.id.fragment_play_button_next) Button buttonNext;
+    @InjectView(R.id.fragment_play_button_play) Button buttonPlay;
+    @InjectView(R.id.fragment_play_progressbar) ProgressBar progressBar;
+    @InjectView(R.id.fragment_play_seekbar) SeekBar seekBar;
+    @InjectView(R.id.fragment_play_controls) LinearLayout linearLayoutControls;
+
     /**
      * Fragment lifecycle methods
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Bundle args = getArguments();
         if (args != null) {
             mTrackItemList = args.getParcelableArrayList(PLAY_TRACK_LIST_KEY);
             mPosition = args.getInt(PLAY_POSITION_KEY);
-        }
-        setController();
-
-        if (playIntent == null) {
-            playIntent = new Intent(getActivity(), MusicService.class);
-            getActivity().bindService(playIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
-            getActivity().startService(playIntent);
         }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        // Inflating the layout and initializing ButterKnife
         View rootView = inflater.inflate(R.layout.fragment_play, container, false);
         ButterKnife.inject(this, rootView);
+        // Setting the button onClickListeners
+        buttonNext.setOnClickListener(v -> mMusicService.playNext());
+        buttonPrev.setOnClickListener(v -> mMusicService.playPrev());
+        buttonPlay.setOnClickListener(v -> playClicked());
 
         updateViewInfo(mPosition);
 
         return rootView;
+    }
+
+    public void playClicked() {
+        if (mMusicService.isPlaying()) {
+            mMusicService.pausePlayer();
+            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_play);
+        } else {
+            mMusicService.start();
+            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_pause);
+        }
     }
 
     public void updateViewInfo(int position) {
@@ -95,59 +113,91 @@ public class PlayFragment extends Fragment {
         }
     }
 
+    private void setSeekBar() {
+        seekBar.setMax(30);
+        textViewTimeMax.setText("00:30");
+
+        mHandler = new Handler();
+        getActivity().runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                if (mIsServiceBound && mMusicService.isPlaying() &&
+                        mMusicService.getCurrentPosition() < mMusicService.getDuration()) {
+                    int time = mMusicService.getCurrentPosition() / 1000;
+                    seekBar.setProgress(time);
+                    textViewTimeCurrent.setText("00:" + time);
+                }
+                mHandler.postDelayed(this, 1000);
+            }
+        });
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (mMusicService != null && fromUser && mIsServiceBound) {
+                    mMusicService.seek(progress * 1000);
+                }
+            }
+        });
+    }
+
     @Override
     public void onStart() {
         super.onStart();
+        // Binding the service
+        Intent intent = new Intent(getActivity(), MusicService.class);
+        getActivity().startService(intent);
+        getActivity().bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(onPrepareReceiver,
+                new IntentFilter("MEDIA_PLAYER_PREPARED"));
     }
 
     @Override
     public void onPause(){
         super.onPause();
-        getActivity().unbindService(mServiceConnection);
         try {
             getActivity().unregisterReceiver(onPrepareReceiver);
             onPrepareReceiver = null;
         } catch (Exception e) {
-            Log.e("AAAAAAAAAAAAA", e.getMessage());
+            Log.e("PlayFragment", e.getMessage());
         }
-        mMediaControllerView.hide();
-    }
-
-    @Override
-    public void onResume(){
-        super.onResume();
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(onPrepareReceiver,
-                new IntentFilter("MEDIA_PLAYER_PREPARED"));
-            setController();
     }
 
     @Override
     public void onStop() {
-        mMediaControllerView.hide();
         super.onStop();
-    }
-
-    @Override
-    public void onDestroy() {
-        getActivity().stopService(playIntent);
-        mMusicService=null;
-        super.onDestroy();
+        // Unbinding the service
+        getActivity().unbindService(mServiceConnection);
     }
 
     private ServiceConnection mServiceConnection = new ServiceConnection(){
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
+            MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
             mMusicService = binder.getService();
-            mMediaControllerView.setIsServiceBound(true);
-            mMediaControllerView.setMusicService(mMusicService);
+            mIsServiceBound = true;
             startPlaying();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            mMediaControllerView.setIsServiceBound(false);
+            mIsServiceBound = false;
         }
     };
 
@@ -161,26 +211,14 @@ public class PlayFragment extends Fragment {
     private BroadcastReceiver onPrepareReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context c, Intent i) {
-            if (i.getAction().equals("MEDIA_PLAYER_PREPARED")) {
-                Log.v("PlayFragment", "MEDIA_PLAYER_PREPARED");
-                mPosition = mMusicService.getTrackPosition();
-                setController();
-                updateViewInfo(mPosition);
-                mMediaControllerView.show(0);
-                mMediaControllerView.requestFocus();
+            mPosition = mMusicService.getTrackPosition();
+            updateViewInfo(mPosition);
+            progressBar.setVisibility(View.GONE);
+            linearLayoutControls.setVisibility(View.VISIBLE);
+            if (mHandler == null) {
+                setSeekBar();
             }
         }
     };
 
-    /**
-     * Controller managements methods
-     */
-    private void setController(){
-        if (mMediaControllerView == null) {
-            mMediaControllerView = new MediaControllerView(getActivity(), false);
-        }
-        mMediaControllerView.setMusicService(mMusicService);
-        mMediaControllerView.setAnchorView(linearLayout);
-        mMediaControllerView.setEnabled(true);
-    }
 }

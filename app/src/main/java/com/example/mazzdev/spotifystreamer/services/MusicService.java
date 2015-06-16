@@ -13,10 +13,13 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.activities.MainActivity;
+import com.example.mazzdev.spotifystreamer.activities.PlayActivity;
+import com.example.mazzdev.spotifystreamer.fragments.PlayFragment;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
 
 import java.util.ArrayList;
@@ -81,9 +84,9 @@ public class MusicService extends Service implements
 
     @Override
     public boolean onUnbind(Intent intent){
-        mMediaPlayer.stop();
-        mMediaPlayer.release();
-        return false;
+//        mMediaPlayer.stop();
+//        mMediaPlayer.release();
+        return true;
     }
 
     public void playTrack(){
@@ -116,24 +119,28 @@ public class MusicService extends Service implements
     @Override
     public void onPrepared(MediaPlayer mp) {
         mp.start();
-        Intent notIntent = new Intent(this, MainActivity.class);
-        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendInt = PendingIntent.getActivity(this, 0,
-        notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Notification notification = new Notification();
-        notification.tickerText = "CIAO";
-        //notification.icon = R.drawable.play0;
-        notification.flags |= Notification.FLAG_ONGOING_EVENT;
-        notification.setLatestEventInfo(getApplicationContext(), "MusicPlayerSample",
-        "Playing: " + "songName", pendInt);
-
-        startForeground(NOTIFICATION_ID, notification);
+        runAsForeground();
 
         // Broadcast intent to activity to let it know the media player has been prepared
         Intent onPreparedIntent = new Intent("MEDIA_PLAYER_PREPARED");
         LocalBroadcastManager.getInstance(this).sendBroadcast(onPreparedIntent);
     }
+
+    private void runAsForeground(){
+        Intent notificationIntent = new Intent(this, PlayActivity.class);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                notificationIntent, 0);
+
+        Notification notification = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentText("RUNNING")
+                .setContentIntent(pendingIntent).build();
+
+        startForeground(NOTIFICATION_ID, notification);
+
+    }
+
 
     //playback methods
     public int getCurrentPosition(){
