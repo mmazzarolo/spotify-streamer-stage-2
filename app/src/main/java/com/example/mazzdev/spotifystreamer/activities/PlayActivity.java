@@ -1,16 +1,12 @@
 package com.example.mazzdev.spotifystreamer.activities;
 
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.MediaController;
-import android.widget.MediaController.MediaPlayerControl;
 
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.fragments.PlayFragment;
-import com.example.mazzdev.spotifystreamer.fragments.TrackFragment;
 
 public class PlayActivity extends AppCompatActivity {
 

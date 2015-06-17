@@ -1,23 +1,23 @@
 package com.example.mazzdev.spotifystreamer.fragments;
 
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.Utility;
+import com.example.mazzdev.spotifystreamer.activities.MainActivity;
 import com.example.mazzdev.spotifystreamer.adapters.TrackListAdapter;
 import com.example.mazzdev.spotifystreamer.models.ArtistItem;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
@@ -44,15 +44,14 @@ import retrofit.RetrofitError;
 public class TrackFragment extends Fragment {
 
     private ArrayList<TrackItem> mTrackItemList;
-    private ArrayList<String> mPreviewURLList;
     private TrackListAdapter mTrackListAdapter;
     private String mArtistName;
     private String mArtistSpotifyID;
     private int mPosition;
+    private boolean mHasSavedInstance = false;
 
     private static final String TRACK_ITEM_LIST_KEY = "TRACK_ITEM_LIST";
     private static final String TRACK_POSITION_KEY = "TRACK_POSITION";
-
     public static final String TRACK_ARTIST_ITEM_KEY = "TRACK_ARTIST_ITEM_KEY";
 
     @InjectView(R.id.progressbar_track) ProgressBar progressBarTrack;
@@ -77,12 +76,14 @@ public class TrackFragment extends Fragment {
             mTrackItemList = new ArrayList<TrackItem>();
         } else {
             mTrackItemList = savedInstanceState.getParcelableArrayList(TRACK_ITEM_LIST_KEY);
+            mHasSavedInstance = true;
         }
         // Restoring the selected position (if the activity has been re-created)
         if (savedInstanceState == null || !savedInstanceState.containsKey(TRACK_POSITION_KEY)) {
             mPosition = ListView.INVALID_POSITION;
         } else {
             mPosition = savedInstanceState.getInt(TRACK_POSITION_KEY);
+            mHasSavedInstance = true;
         }
     }
 
@@ -109,13 +110,6 @@ public class TrackFragment extends Fragment {
                 mTrackItemList);
         listViewTrack.setAdapter(mTrackListAdapter);
 
-//        listViewTrack.post(new Runnable() {
-//            @Override
-//            public void run() {
-//                listViewTrack.smoothScrollToPosition(mPosition);
-//            }
-//        });
-
         listViewTrack.post(() -> listViewTrack.smoothScrollToPosition(mPosition));
 
         listViewTrack.setOnItemClickListener(onTrackItemClickListener);
@@ -127,7 +121,18 @@ public class TrackFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             mPosition = position;
-            ((Callback) getActivity()).onTrackItemSelected(mTrackItemList, position);
+            // If the current activity is MainActivity then we are in tablet mode
+            if (getActivity().getClass() == MainActivity.class) {
+                Bundle args = new Bundle();
+                args.putParcelableArrayList(PlayFragment.PLAY_TRACK_LIST_KEY, mTrackItemList);
+                args.putInt(PlayFragment.PLAY_POSITION_KEY, mPosition);
+                DialogFragment playFragment = new PlayFragment();
+                playFragment.setArguments(args);
+
+                playFragment.show(getActivity().getSupportFragmentManager(), "dialog");
+            } else {
+                ((Callback) getActivity()).onTrackItemSelected(mTrackItemList, position);
+            }
         }
     };
 
@@ -138,7 +143,7 @@ public class TrackFragment extends Fragment {
         // From: http://stackoverflow.com/a/18320838/4836602
         // AppCompatActivity is used instead of ActionBarActivity
         ((AppCompatActivity)getActivity()).getSupportActionBar().setSubtitle(mArtistName);
-        if (mArtistSpotifyID != null) {
+        if (mArtistSpotifyID != null && !mHasSavedInstance) {
             searchTracks(mArtistSpotifyID);
         }
     }

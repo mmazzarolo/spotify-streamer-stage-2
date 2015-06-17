@@ -6,11 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.v4.app.Fragment;
-import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,10 +23,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.mazzdev.spotifystreamer.R;
-import com.example.mazzdev.spotifystreamer.activities.PlayActivity;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
 import com.example.mazzdev.spotifystreamer.services.MusicService;
-import com.example.mazzdev.spotifystreamer.views.MediaControllerView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -36,19 +33,21 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 /**
- * A placeholder fragment containing a simple view.
+ * PlayFragment
+ * Shows and manages the playback of the tracks (by binding to MusicService).
  */
-public class PlayFragment extends Fragment {
+public class PlayFragment extends DialogFragment {
 
     private ArrayList<TrackItem> mTrackItemList;
     private int mPosition;
-
     private MusicService mMusicService;
-    private boolean mIsServiceBound;;
-    private Handler mHandler = null;
+    private Handler mSeekbarHandler = null;
+    private boolean mIsServiceBound = false;
+    private boolean mHasSavedInstance = false;
 
     public static final String PLAY_TRACK_LIST_KEY = "PLAY_TRACK_LIST";
     public static final String PLAY_POSITION_KEY = "PLAY_POSITION";
+    public static final String PLAY_SAVE_STATE_KEY = "PLAY_SAVE_STATE";
 
     @InjectView(R.id.fragment_play_imageview) ImageView imageView;
     @InjectView(R.id.fragment_play_textview_artist) TextView textViewArtist;
@@ -69,6 +68,11 @@ public class PlayFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Checking if the device has been rotated
+        if (savedInstanceState != null && savedInstanceState.containsKey(PLAY_SAVE_STATE_KEY)) {
+            mHasSavedInstance = true;
+        }
+        // Restoring the view info on creation
         Bundle args = getArguments();
         if (args != null) {
             mTrackItemList = args.getParcelableArrayList(PLAY_TRACK_LIST_KEY);
@@ -113,42 +117,11 @@ public class PlayFragment extends Fragment {
         }
     }
 
-    private void setSeekBar() {
-        seekBar.setMax(30);
-        textViewTimeMax.setText("00:30");
-
-        mHandler = new Handler();
-        getActivity().runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                if (mIsServiceBound && mMusicService.isPlaying() &&
-                        mMusicService.getCurrentPosition() < mMusicService.getDuration()) {
-                    int time = mMusicService.getCurrentPosition() / 1000;
-                    seekBar.setProgress(time);
-                    textViewTimeCurrent.setText("00:" + time);
-                }
-                mHandler.postDelayed(this, 1000);
-            }
-        });
-
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (mMusicService != null && fromUser && mIsServiceBound) {
-                    mMusicService.seek(progress * 1000);
-                }
-            }
-        });
+    // Using onSaveInstanceState for saving a flag for the device rotation
+    @Override
+    public void onSaveInstanceState(Bundle savedState) {
+        savedState.putBoolean(PLAY_SAVE_STATE_KEY, true);
+        super.onSaveInstanceState(savedState);
     }
 
     @Override
@@ -163,16 +136,22 @@ public class PlayFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(onPrepareReceiver,
-                new IntentFilter("MEDIA_PLAYER_PREPARED"));
+        LocalBroadcastManager.getInstance(getActivity()).
+                registerReceiver(mBroadcastReceiver,
+                        new IntentFilter(MusicService.BROADCAST_MEDIA_PLAYER_PREPARED));
+        LocalBroadcastManager.getInstance(getActivity()).
+                registerReceiver(mBroadcastReceiver,
+                        new IntentFilter(MusicService.BROADCAST_PLAYBACK_COMPLETED));
     }
 
     @Override
     public void onPause(){
         super.onPause();
         try {
-            getActivity().unregisterReceiver(onPrepareReceiver);
-            onPrepareReceiver = null;
+            getActivity().unregisterReceiver(mBroadcastReceiver);
+            mBroadcastReceiver = null;
+            mSeekbarHandler.removeCallbacks(seekBarRunnable);
+            mSeekbarHandler = null;
         } catch (Exception e) {
             Log.e("PlayFragment", e.getMessage());
         }
@@ -185,16 +164,32 @@ public class PlayFragment extends Fragment {
         getActivity().unbindService(mServiceConnection);
     }
 
-    private ServiceConnection mServiceConnection = new ServiceConnection(){
+    // Fix for a bug in onDestroyView of a FragmenDialog
+    @Override
+    public void onDestroyView() {
+        if (getDialog() != null && getRetainInstance())
+            getDialog().setDismissMessage(null);
+        super.onDestroyView();
+    }
 
+    /**
+     * Setting the MusicService Binding
+     */
+    private ServiceConnection mServiceConnection = new ServiceConnection(){
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            // Saving an istance of the binded service
             MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
             mMusicService = binder.getService();
             mIsServiceBound = true;
-            startPlaying();
+            // If the device has not been rotated then start the click track
+            if (!mHasSavedInstance){
+                startPlaying();
+            // If the device has been rotated and is already playing then show the controls
+            } else if (mMusicService.getIsPrepared()) {
+                showControls();
+            }
         }
-
         @Override
         public void onServiceDisconnected(ComponentName name) {
             mIsServiceBound = false;
@@ -207,18 +202,88 @@ public class PlayFragment extends Fragment {
         mMusicService.playTrack();
     }
 
-    // Broadcast receiver to determine when music player has been prepared
-    private BroadcastReceiver onPrepareReceiver = new BroadcastReceiver() {
+    /**
+     * Setting the broadcast receiver to intercept broadcast msg from MusicService
+     */
+    private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context c, Intent i) {
-            mPosition = mMusicService.getTrackPosition();
-            updateViewInfo(mPosition);
-            progressBar.setVisibility(View.GONE);
-            linearLayoutControls.setVisibility(View.VISIBLE);
-            if (mHandler == null) {
-                setSeekBar();
+            if (i.getAction().equals(MusicService.BROADCAST_MEDIA_PLAYER_PREPARED)) {
+                showControls();
+            } else if (i.getAction().equals(MusicService.BROADCAST_PLAYBACK_COMPLETED)) {
+                hideControls();
             }
         }
     };
+
+    private void showControls() {
+        mPosition = mMusicService.getTrackPosition();
+        updateViewInfo(mPosition);
+        progressBar.setVisibility(View.GONE);
+        linearLayoutControls.setVisibility(View.VISIBLE);
+        if (mSeekbarHandler == null) {
+            setSeekBar();
+        }
+        if (mMusicService.isPlaying()) {
+            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_pause);
+        } else {
+            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_play);
+        }
+    }
+
+    private void hideControls() {
+        progressBar.setVisibility(View.VISIBLE);
+        linearLayoutControls.setVisibility(View.GONE);
+        if (mSeekbarHandler != null) {
+            mSeekbarHandler.removeCallbacks(seekBarRunnable);
+        }
+        mSeekbarHandler = null;
+    }
+
+    /**
+     * Management of the seekbar
+     */
+    private void setSeekBar() {
+        seekBar.setMax(30);
+        textViewTimeMax.setText("00:30");
+
+        mSeekbarHandler = new Handler();
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(seekBarRunnable);
+        }
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (mMusicService != null && fromUser && mIsServiceBound) {
+                    mMusicService.seekTo(progress * 1000);
+                }
+            }
+        });
+    }
+
+    Runnable seekBarRunnable = new Runnable() {
+
+        @Override
+        public void run() {
+            if (mIsServiceBound && mMusicService.isPlaying() &&
+                    mMusicService.getCurrentPosition() < mMusicService.getDuration()) {
+                int time = mMusicService.getCurrentPosition() / 1000;
+                seekBar.setProgress(time);
+                textViewTimeCurrent.setText("00:" + String.format("%02d", time));
+            }
+            mSeekbarHandler.postDelayed(this, 1000);
+        }
+    };
+
 
 }
