@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
 
     <application
         android:allowBackup="true"
@@ -37,14 +38,6 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".activities.MainActivity" />
-        </activity>
-        <activity
-            android:name=".activities.PlayActivity"
-            android:label="@string/title_activity_play"
-            android:parentActivityName=".activities.TrackActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.mazzdev.spotifystreamer.activities.TrackActivity" />
         </activity>
 
         <service

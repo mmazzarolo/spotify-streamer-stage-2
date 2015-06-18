@@ -5,7 +5,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.SearchView;
-import android.support.v7.widget.SearchView.OnQueryTextListener;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +14,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.support.v7.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
 
 import com.example.mazzdev.spotifystreamer.R;
@@ -60,6 +60,7 @@ public class MainFragment extends Fragment {
      */
     public interface Callback {
         void onArtistItemSelected(ArtistItem artistItem);
+
     }
 
     @Override
@@ -92,11 +93,17 @@ public class MainFragment extends Fragment {
                 getActivity(),
                 R.layout.list_item_artist,
                 mArtistItemList);
+
         listViewArtist.setAdapter(mArtistListAdapter);
 
         // Fix for smoothScrollToPosition suggested here:
         // http://stackoverflow.com/a/18133295/4836602
-        listViewArtist.post(() -> listViewArtist.smoothScrollToPosition(mPosition));
+        listViewArtist.post(new Runnable() {
+            @Override
+            public void run() {
+                listViewArtist.smoothScrollToPosition(mPosition);
+            }
+        });
 
         listViewArtist.setOnItemClickListener(onArtistItemClickListener);
 

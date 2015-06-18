@@ -121,18 +121,12 @@ public class TrackFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             mPosition = position;
-            // If the current activity is MainActivity then we are in tablet mode
-            if (getActivity().getClass() == MainActivity.class) {
-                Bundle args = new Bundle();
-                args.putParcelableArrayList(PlayFragment.PLAY_TRACK_LIST_KEY, mTrackItemList);
-                args.putInt(PlayFragment.PLAY_POSITION_KEY, mPosition);
-                DialogFragment playFragment = new PlayFragment();
-                playFragment.setArguments(args);
-
-                playFragment.show(getActivity().getSupportFragmentManager(), "dialog");
-            } else {
-                ((Callback) getActivity()).onTrackItemSelected(mTrackItemList, position);
-            }
+            Bundle args = new Bundle();
+            args.putParcelableArrayList(PlayFragment.PLAY_TRACK_LIST_KEY, mTrackItemList);
+            args.putInt(PlayFragment.PLAY_POSITION_KEY, mPosition);
+            DialogFragment playFragment = new PlayFragment();
+            playFragment.setArguments(args);
+            playFragment.show(getActivity().getSupportFragmentManager(), "dialog");
         }
     };
 

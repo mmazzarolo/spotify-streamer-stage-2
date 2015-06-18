@@ -1,5 +1,6 @@
 package com.example.mazzdev.spotifystreamer.fragments;
 
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,13 +12,12 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import butterknife.OnClick;
 
 /**
  * PlayFragment
@@ -49,18 +50,15 @@ public class PlayFragment extends DialogFragment {
     public static final String PLAY_POSITION_KEY = "PLAY_POSITION";
     public static final String PLAY_SAVE_STATE_KEY = "PLAY_SAVE_STATE";
 
-    @InjectView(R.id.fragment_play_imageview) ImageView imageView;
-    @InjectView(R.id.fragment_play_textview_artist) TextView textViewArtist;
-    @InjectView(R.id.fragment_play_textview_album) TextView textViewAlbum;
-    @InjectView(R.id.fragment_play_textview_track) TextView textViewTrack;
-    @InjectView(R.id.fragment_play_textview_time_current) TextView textViewTimeCurrent;
-    @InjectView(R.id.fragment_play_textview_time_max) TextView textViewTimeMax;
-    @InjectView(R.id.fragment_play_button_prev) Button buttonPrev;
-    @InjectView(R.id.fragment_play_button_next) Button buttonNext;
-    @InjectView(R.id.fragment_play_button_play) Button buttonPlay;
-    @InjectView(R.id.fragment_play_progressbar) ProgressBar progressBar;
-    @InjectView(R.id.fragment_play_seekbar) SeekBar seekBar;
-    @InjectView(R.id.fragment_play_controls) LinearLayout linearLayoutControls;
+    @InjectView(R.id.imageview) ImageView imageView;
+    @InjectView(R.id.textview_artist) TextView textViewArtist;
+    @InjectView(R.id.textview_album) TextView textViewAlbum;
+    @InjectView(R.id.textview_track) TextView textViewTrack;
+    @InjectView(R.id.textview_time_current) TextView textViewTimeCurrent;
+    @InjectView(R.id.textview_time_max) TextView textViewTimeMax;
+    @InjectView(R.id.button_play) Button buttonPlay;
+    @InjectView(R.id.progressbar) ProgressBar progressBar;
+    @InjectView(R.id.seekbar) SeekBar seekBar;
 
     /**
      * Fragment lifecycle methods
@@ -80,40 +78,87 @@ public class PlayFragment extends DialogFragment {
         }
     }
 
+    // Removing the fragmentDialog title
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
+        return dialog;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflating the layout and initializing ButterKnife
         View rootView = inflater.inflate(R.layout.fragment_play, container, false);
         ButterKnife.inject(this, rootView);
-        // Setting the button onClickListeners
-        buttonNext.setOnClickListener(v -> mMusicService.playNext());
-        buttonPrev.setOnClickListener(v -> mMusicService.playPrev());
-        buttonPlay.setOnClickListener(v -> playClicked());
-
-        updateViewInfo(mPosition);
-
+        updateView(mPosition);
         return rootView;
     }
 
-    public void playClicked() {
+    @OnClick(R.id.button_next)
+    public void buttonNextClicked() {
+            sendActionToService(MusicService.INTENT_ACTION_NEXT);
+    }
+
+    @OnClick(R.id.button_prev)
+    public void buttonPrevClicked() {
+            sendActionToService(MusicService.INTENT_ACTION_PREV);
+    }
+
+    @OnClick(R.id.button_play)
+    public void buttonPlayClicked() {
         if (mMusicService.isPlaying()) {
-            mMusicService.pausePlayer();
-            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_play);
+            sendActionToService(MusicService.INTENT_ACTION_PAUSE);
         } else {
-            mMusicService.start();
-            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_pause);
+            sendActionToService(MusicService.INTENT_ACTION_PLAY);
         }
     }
 
-    public void updateViewInfo(int position) {
+    @OnClick(R.id.button_stop)
+    public void buttonStopClicked() {
+        sendActionToService(MusicService.INTENT_ACTION_STOP);
+        Dialog dialog = getDialog();
+        if (dialog != null && dialog.isShowing()) {
+            dialog.dismiss();
+        }
+    }
+
+    public void sendActionToService (String action) {
+        Intent intent = new Intent(getActivity(), MusicService.class);
+        intent.setAction(action);
+        getActivity().startService(intent);
+    }
+
+    public void updateView (int position) {
+        // Setting the track info
         textViewArtist.setText(mTrackItemList.get(position).getArtistName());
         textViewAlbum.setText(mTrackItemList.get(position).getAlbumName());
         textViewTrack.setText(mTrackItemList.get(position).getTrackName());
         if (imageView != null && mTrackItemList.get(position).hasLargeThumbnail()) {
             Picasso.with(getActivity())
                     .load(mTrackItemList.get(position).getThumbnailLargeURL())
+                    .resize(500, 500)
                     .into(imageView);
+        }
+        // Setting the play/pause button
+        if (mIsServiceBound && mMusicService.isPlaying()) {
+            buttonPlay.setBackgroundResource(R.drawable.ic_pause_grey600_48dp);
+        } else {
+            buttonPlay.setBackgroundResource(R.drawable.ic_play_grey600_48dp);
+        }
+        // Setting the seekBar and progressBar
+        if (mIsServiceBound && mMusicService.getIsPrepared()) {
+            progressBar.setVisibility(View.GONE);
+            if (mSeekbarHandler == null) {
+                setSeekBar();
+            }
+        } else {
+            progressBar.setVisibility(View.VISIBLE);
+            if (mSeekbarHandler != null) {
+                mSeekbarHandler.removeCallbacks(seekBarRunnable);
+            }
+            mSeekbarHandler = null;
         }
     }
 
@@ -131,6 +176,16 @@ public class PlayFragment extends DialogFragment {
         Intent intent = new Intent(getActivity(), MusicService.class);
         getActivity().startService(intent);
         getActivity().bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
+        // Setting the width of the dialog programmatically
+        boolean hasTwoPanes = getResources().getBoolean(R.bool.has_two_panes);
+        if (!hasTwoPanes) {
+            Dialog dialog = getDialog();
+            if (dialog != null) {
+                int width = ViewGroup.LayoutParams.MATCH_PARENT;
+                int height = ViewGroup.LayoutParams.MATCH_PARENT;
+                dialog.getWindow().setLayout(width, height);
+            }
+        }
     }
 
     @Override
@@ -138,10 +193,7 @@ public class PlayFragment extends DialogFragment {
         super.onResume();
         LocalBroadcastManager.getInstance(getActivity()).
                 registerReceiver(mBroadcastReceiver,
-                        new IntentFilter(MusicService.BROADCAST_MEDIA_PLAYER_PREPARED));
-        LocalBroadcastManager.getInstance(getActivity()).
-                registerReceiver(mBroadcastReceiver,
-                        new IntentFilter(MusicService.BROADCAST_PLAYBACK_COMPLETED));
+                        new IntentFilter(MusicService.BROADCAST_PLAYBACK_STATE_CHANGED));
     }
 
     @Override
@@ -153,7 +205,7 @@ public class PlayFragment extends DialogFragment {
             mSeekbarHandler.removeCallbacks(seekBarRunnable);
             mSeekbarHandler = null;
         } catch (Exception e) {
-            Log.e("PlayFragment", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -182,13 +234,12 @@ public class PlayFragment extends DialogFragment {
             MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
             mMusicService = binder.getService();
             mIsServiceBound = true;
-            // If the device has not been rotated then start the click track
+            // If the device has not been rotated then start the clicked track
             if (!mHasSavedInstance){
                 startPlaying();
-            // If the device has been rotated and is already playing then show the controls
-            } else if (mMusicService.getIsPrepared()) {
-                showControls();
             }
+            mPosition = mMusicService.getTrackPosition();
+            updateView(mPosition);
         }
         @Override
         public void onServiceDisconnected(ComponentName name) {
@@ -208,37 +259,10 @@ public class PlayFragment extends DialogFragment {
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context c, Intent i) {
-            if (i.getAction().equals(MusicService.BROADCAST_MEDIA_PLAYER_PREPARED)) {
-                showControls();
-            } else if (i.getAction().equals(MusicService.BROADCAST_PLAYBACK_COMPLETED)) {
-                hideControls();
-            }
+            mPosition = mMusicService.getTrackPosition();
+            updateView(mPosition);
         }
     };
-
-    private void showControls() {
-        mPosition = mMusicService.getTrackPosition();
-        updateViewInfo(mPosition);
-        progressBar.setVisibility(View.GONE);
-        linearLayoutControls.setVisibility(View.VISIBLE);
-        if (mSeekbarHandler == null) {
-            setSeekBar();
-        }
-        if (mMusicService.isPlaying()) {
-            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_pause);
-        } else {
-            buttonPlay.setBackgroundResource(android.R.drawable.ic_media_play);
-        }
-    }
-
-    private void hideControls() {
-        progressBar.setVisibility(View.VISIBLE);
-        linearLayoutControls.setVisibility(View.GONE);
-        if (mSeekbarHandler != null) {
-            mSeekbarHandler.removeCallbacks(seekBarRunnable);
-        }
-        mSeekbarHandler = null;
-    }
 
     /**
      * Management of the seekbar
