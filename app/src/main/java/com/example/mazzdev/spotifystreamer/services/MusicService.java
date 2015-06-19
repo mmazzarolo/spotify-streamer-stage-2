@@ -252,7 +252,7 @@ public class MusicService extends Service implements
         return mTrackPosition;
     }
 
-    public boolean getIsPrepared() {
+    public boolean isPrepared() {
         return mIsPrepared;
     }
 

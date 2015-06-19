@@ -117,10 +117,13 @@ public class PlayFragment extends DialogFragment {
 
     @OnClick(R.id.button_stop)
     public void buttonStopClicked() {
-        sendActionToService(MusicService.INTENT_ACTION_STOP);
-        Dialog dialog = getDialog();
-        if (dialog != null && dialog.isShowing()) {
-            dialog.dismiss();
+
+        if (mIsServiceBound && mMusicService.isPrepared()) {
+            sendActionToService(MusicService.INTENT_ACTION_STOP);
+            Dialog dialog = getDialog();
+            if (dialog != null && dialog.isShowing()) {
+                dialog.dismiss();
+            }
         }
     }
 
@@ -148,7 +151,7 @@ public class PlayFragment extends DialogFragment {
             buttonPlay.setBackgroundResource(R.drawable.ic_play_grey600_48dp);
         }
         // Setting the seekBar and progressBar
-        if (mIsServiceBound && mMusicService.getIsPrepared()) {
+        if (mIsServiceBound && mMusicService.isPrepared()) {
             progressBar.setVisibility(View.GONE);
             if (mSeekbarHandler == null) {
                 setSeekBar();
