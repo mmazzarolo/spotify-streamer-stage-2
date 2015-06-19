@@ -60,7 +60,6 @@ public class MainFragment extends Fragment {
      */
     public interface Callback {
         void onArtistItemSelected(ArtistItem artistItem);
-
     }
 
     @Override

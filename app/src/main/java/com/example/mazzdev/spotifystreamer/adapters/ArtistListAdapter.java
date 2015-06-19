@@ -72,6 +72,8 @@ public class ArtistListAdapter extends ArrayAdapter<ArtistItem> {
                         .load(artistItem.getThumbnailURL())
                         .resize(100, 100)
                         .centerCrop()
+                        .placeholder(R.drawable.ic_music_note_grey600_48dp)
+                        .error(R.drawable.ic_music_note_grey600_48dp)
                         .into(viewHolder.imageView);
             }
         }

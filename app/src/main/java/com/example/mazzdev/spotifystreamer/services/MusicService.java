@@ -14,11 +14,13 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat.Action;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.Utility;
+import com.example.mazzdev.spotifystreamer.activities.MainActivity;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
 import com.squareup.picasso.Picasso;
 
@@ -34,7 +36,7 @@ public class MusicService extends Service implements
         MediaPlayer.OnCompletionListener {
 
     private MediaPlayer mMediaPlayer;
-    private ArrayList<TrackItem> mTrackItemList;
+    private ArrayList<TrackItem> mTrackItemList = null;
     private int mTrackPosition;
     private final IBinder mMusicBinder = new MusicBinder();
     private boolean mIsPrepared = false;
@@ -98,13 +100,22 @@ public class MusicService extends Service implements
 
         // Building the notification settings
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-        builder.setSmallIcon(android.R.drawable.ic_media_play);
+        builder.setSmallIcon(R.drawable.ic_music_note_grey600_48dp);
         builder.setContentTitle(getCurrentTrack().getTrackName());
         builder.setContentText(getCurrentTrack().getArtistName());
         builder.setLargeIcon(getLargeIcon());
         builder.setStyle(mediaStyle);
 
-        // Adding the notification actions
+        // Setting the notification default intent (starting MainActivity)
+        Intent resultIntent = new Intent(getApplicationContext(), MainActivity.class);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
+        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+        PendingIntent resultPendingIntent = stackBuilder.
+                getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(resultPendingIntent);
+
+        // Adding the notification controls actions
         builder.addAction(createAction
                 (android.R.drawable.ic_media_previous, "Previous", INTENT_ACTION_PREV));
         if (isPlaying()) {
@@ -117,7 +128,17 @@ public class MusicService extends Service implements
         builder.addAction(createAction
                 (android.R.drawable.ic_media_next, "Next", INTENT_ACTION_NEXT));
 
-        mediaStyle.setShowActionsInCompactView(0, 1, 2);
+        // Setting the notification delete intent
+        Intent stopIntent = new Intent(getApplicationContext(), MusicService.class);
+        stopIntent.setAction(INTENT_ACTION_STOP);
+        PendingIntent deleteIntent = PendingIntent.
+                getService(getApplicationContext(), 1, stopIntent, 0);
+        builder.setDeleteIntent(deleteIntent);
+
+        // Setting the lock screen notification if setted
+        if (Utility.getPreferredLockScreenNotifInfo(getApplicationContext())) {
+            mediaStyle.setShowActionsInCompactView(0, 1, 2);
+        }
 
         // Setting the notification manager
         NotificationManager notificationManager =
@@ -138,6 +159,8 @@ public class MusicService extends Service implements
                             return Picasso.with(getApplicationContext())
                                     .load(getCurrentTrack().getThumbnailSmallURL())
                                     .resize(200, 200)
+                                    .placeholder(R.drawable.ic_music_note_grey600_48dp)
+                                    .error(R.drawable.ic_music_note_grey600_48dp)
                                     .get();
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -156,7 +179,7 @@ public class MusicService extends Service implements
             return bitmap;
         } else {
             return BitmapFactory.
-                    decodeResource(getResources(), android.R.drawable.ic_lock_idle_alarm);
+                    decodeResource(getResources(), R.drawable.ic_music_note_grey600_48dp);
         }
     }
 
@@ -169,8 +192,8 @@ public class MusicService extends Service implements
     }
 
     public void initMusicPlayer(){
-        mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
         mMediaPlayer.setOnPreparedListener(this);
         mMediaPlayer.setOnCompletionListener(this);
         mMediaPlayer.setOnErrorListener(this);
@@ -240,20 +263,16 @@ public class MusicService extends Service implements
         mTrackItemList = trackItemList;
     }
 
-    public ArrayList<TrackItem> getTrackItemList() {
-        return mTrackItemList;
-    }
-
     public void setTrackPosition(int trackPosition) {
         mTrackPosition = trackPosition;
     }
 
-    public int getTrackPosition() {
-        return mTrackPosition;
-    }
-
     public boolean isPrepared() {
         return mIsPrepared;
+    }
+
+    public boolean isEmpty() {
+        return mTrackItemList == null;
     }
 
     public TrackItem getCurrentTrack() {

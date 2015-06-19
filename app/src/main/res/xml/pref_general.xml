@@ -10,4 +10,10 @@
         android:inputType="text"
         android:singleLine="true" />
 
+    <CheckBoxPreference
+        android:title="@string/pref_notif_lock_screen_label"
+        android:key="@string/pref_notif_lock_screen_key"
+        android:defaultValue="true"
+        android:summary="@string/pref_notif_lock_screen_summary"/>
+
 </PreferenceScreen>

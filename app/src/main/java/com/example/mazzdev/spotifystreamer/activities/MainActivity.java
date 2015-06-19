@@ -1,76 +1,83 @@
 package com.example.mazzdev.spotifystreamer.activities;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.Utility;
 import com.example.mazzdev.spotifystreamer.fragments.MainFragment;
+import com.example.mazzdev.spotifystreamer.fragments.PlayFragment;
 import com.example.mazzdev.spotifystreamer.fragments.TrackFragment;
 import com.example.mazzdev.spotifystreamer.models.ArtistItem;
+import com.example.mazzdev.spotifystreamer.services.MusicService;
 
 
 public class MainActivity extends AppCompatActivity implements MainFragment.Callback {
 
     private static final String TRACKFRAGMENT_TAG = "TFTAG";
 
-    private boolean mTwoPane;
+    private boolean mHasTwoPanes;
     private String mCountry;
+    private MusicService mMusicService;
+    private boolean mIsServiceBound = false;
+    private Toast mToast;
 
+    /**
+     * Activity lifecycle methods
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Setting the country preference from the setting
         mCountry = Utility.getPreferredCountry(this);
 
-        if (findViewById(R.id.track_container) != null) {
-            // The track_container view will be present only in the large-screen layouts
-            // (res/layout-sw600dp). If this view is present, then the activity should be
-            // in two-pane mode.
-            mTwoPane = true;
-            // In two-pane mode, show the detail view in this activity by
-            // adding or replacing the detail fragment using a
-            // fragment transaction.
+        // Is the app running on a tablet?
+        mHasTwoPanes = getResources().getBoolean(R.bool.has_two_panes);
+
+        // In two-pane mode, show the detail view in this activity by adding or replacing
+        // the detail fragment using a fragment transaction
+        if (mHasTwoPanes) {
+
             if (savedInstanceState == null) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.track_container, new TrackFragment(), TRACKFRAGMENT_TAG)
                         .commit();
             }
-        } else {
-            mTwoPane = false;
         }
     }
 
     @Override
-    public void onArtistItemSelected(ArtistItem artistItem) {
-        if (mTwoPane) {
-            Bundle args = new Bundle();
-            args.putParcelable(TrackFragment.TRACK_ARTIST_ITEM_KEY, artistItem);
+    protected void onStart() {
+        super.onStart();
+        // Binding the service
+        Intent intent = new Intent(this, MusicService.class);
+        startService(intent);
+        bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
+    }
 
-            TrackFragment fragment = new TrackFragment();
-            fragment.setArguments(args);
-
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.track_container, fragment, TRACKFRAGMENT_TAG)
-                    .commit();
-        } else {
-            Intent intent = new Intent(this, TrackActivity.class);
-            Bundle extras = new Bundle();
-            extras.putParcelable(TrackFragment.TRACK_ARTIST_ITEM_KEY, artistItem);
-            intent.putExtras(extras);
-            startActivity(intent);
-        }
+    @Override
+    public void onStop() {
+        super.onStop();
+        // Unbinding the service
+        unbindService(mServiceConnection);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         String country = Utility.getPreferredCountry(this);
-        // update the location in our second pane using the fragment manager
+        // Update the new country location
         if (country != null && !country.equals(mCountry)) {
             MainFragment mainFragment =
                     (MainFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_main);
@@ -81,6 +88,35 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
         }
     }
 
+    /**
+     * Managing the artist click
+     */
+    @Override
+    public void onArtistItemSelected(ArtistItem artistItem) {
+        // In single-pane mode, add the trackFragment to the container
+        if (mHasTwoPanes) {
+            Bundle args = new Bundle();
+            args.putParcelable(TrackFragment.TRACK_ARTIST_ITEM_KEY, artistItem);
+
+            TrackFragment fragment = new TrackFragment();
+            fragment.setArguments(args);
+
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.track_container, fragment, TRACKFRAGMENT_TAG)
+                    .commit();
+        // In two-pane mode, start TrackActivity
+        } else {
+            Intent intent = new Intent(this, TrackActivity.class);
+            Bundle extras = new Bundle();
+            extras.putParcelable(TrackFragment.TRACK_ARTIST_ITEM_KEY, artistItem);
+            intent.putExtras(extras);
+            startActivity(intent);
+        }
+    }
+
+    /**
+     * Setting the Menu
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -90,14 +126,85 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-
-        // To the Settings menu
-        if (id == R.id.action_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
-            return true;
+        switch (id) {
+            // Open the settings menu
+            case R.id.menu_settings:
+                startActivity(new Intent(this, SettingsActivity.class));
+                break;
+            // Share the track preview URL
+            case R.id.menu_track_share:
+                if (mIsServiceBound && !mMusicService.isEmpty()) {
+                    shareString(mMusicService.getCurrentTrack().getPreviewURL());
+                } else {
+                    CharSequence text = getString(R.string.select_a_track);
+                    showToast(text);
+                }
+                break;
+            // Share the track URI
+            case R.id.menu_uri_share:
+                if (mIsServiceBound && !mMusicService.isEmpty()) {
+                    shareString(mMusicService.getCurrentTrack().getPreviewURL());
+                } else {
+                    CharSequence text = getString(R.string.select_a_track);
+                    showToast(text);
+                }
+                break;
+            // Show to the now-playing fragment
+            case R.id.menu_now_playing:
+                if (mIsServiceBound && !mMusicService.isEmpty()) {
+                    DialogFragment playFragment = new PlayFragment();
+                    playFragment.show(getSupportFragmentManager(), "dialog");
+                } else {
+                    CharSequence text = getString(R.string.select_a_track);
+                    showToast(text);
+                }
+                break;
         }
-
         return super.onOptionsItemSelected(item);
+    }
+
+    private void shareString(String text) {
+        Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+        sharingIntent.setType("text/plain");
+        String subject = "spotify-stramer-stage-2";
+        sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
+        sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, text);
+        startActivity(Intent.createChooser(sharingIntent,
+                getResources().getString(R.string.share_title)));
+    }
+
+    private void showToast(CharSequence text) {
+        if (mToast != null) {
+            mToast.cancel();
+        }
+        mToast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
+        mToast.show();
+    }
+
+
+    /**
+     * Setting the MusicService Binding
+     */
+    private ServiceConnection mServiceConnection = new ServiceConnection(){
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // Saving an istance of the binded service
+            MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
+            mMusicService = binder.getService();
+            mIsServiceBound = true;
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mIsServiceBound = false;
+        }
+    };
+
+    public MusicService getMusicService() {
+        return mMusicService;
+    }
+
+    public boolean isServiceBound() {
+        return mIsServiceBound;
     }
 
 }

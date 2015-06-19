@@ -18,8 +18,15 @@ public class Utility {
 
     public static String getPreferredCountry(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        return prefs.getString(context.getString(R.string.pref_country_key),
-                context.getString(R.string.pref_country_default));
+        String key = context.getString(R.string.pref_country_key);
+        String def = context.getString(R.string.pref_country_default);
+        return prefs.getString(key, def);
+    }
+
+    public static boolean getPreferredLockScreenNotifInfo(Context context)  {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String key = context.getString(R.string.pref_notif_lock_screen_key);
+        return prefs.getBoolean(key, true);
     }
 
     public static void sendBroadcast(Context context, String string) {

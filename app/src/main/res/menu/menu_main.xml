@@ -1,6 +1,32 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
-    <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="100" app:showAsAction="never" />
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+
+    <item
+        android:id="@+id/menu_settings"
+        android:title="@string/menu_settings"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_track_share"
+        android:title="@string/menu_track_share"
+        android:orderInCategory="101"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_uri_share"
+        android:title="@string/menu_uri_share"
+        android:orderInCategory="102"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_now_playing"
+        android:title="@string/menu_now_playing"
+        android:orderInCategory="80"
+        android:icon="@drawable/ic_headphones_white_48dp"
+        app:showAsAction="ifRoom" />
+
 </menu>

@@ -18,6 +18,7 @@ import android.widget.TextView;
 import com.example.mazzdev.spotifystreamer.R;
 import com.example.mazzdev.spotifystreamer.Utility;
 import com.example.mazzdev.spotifystreamer.activities.MainActivity;
+import com.example.mazzdev.spotifystreamer.activities.TrackActivity;
 import com.example.mazzdev.spotifystreamer.adapters.TrackListAdapter;
 import com.example.mazzdev.spotifystreamer.models.ArtistItem;
 import com.example.mazzdev.spotifystreamer.models.TrackItem;
@@ -57,15 +58,6 @@ public class TrackFragment extends Fragment {
     @InjectView(R.id.progressbar_track) ProgressBar progressBarTrack;
     @InjectView(R.id.textview_track) TextView textViewTrack;
     @InjectView(R.id.listview_track) ListView listViewTrack;
-
-    /**
-     * A callback interface that all activities containing this fragment must
-     * implement. This mechanism allows activities to be notified of item
-     * selections.
-     */
-    public interface Callback {
-        void onTrackItemSelected(ArrayList<TrackItem> trackItemList, int position);
-    }
 
     // If the activity has been re-created get the list back from saveInstanceState
     @Override
@@ -121,11 +113,28 @@ public class TrackFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             mPosition = position;
-            Bundle args = new Bundle();
-            args.putParcelableArrayList(PlayFragment.PLAY_TRACK_LIST_KEY, mTrackItemList);
-            args.putInt(PlayFragment.PLAY_POSITION_KEY, mPosition);
+            boolean hasTwoPanes = getResources().getBoolean(R.bool.has_two_panes);
+
+            // In two-pane mode, we are in the MainActivity activity
+            if (hasTwoPanes) {
+                MainActivity mainActivity = (MainActivity) getActivity();
+                if (mainActivity.isServiceBound()) {
+                    mainActivity.getMusicService().setTrackItemList(mTrackItemList);
+                    mainActivity.getMusicService().setTrackPosition(mPosition);
+                    mainActivity.getMusicService().playTrack();
+                }
+            // In single-pane mode, we are in the TrackActivity activity
+            } else {
+                TrackActivity trackActivity = (TrackActivity) getActivity();
+                if (trackActivity.isServiceBound()) {
+                    trackActivity.getMusicService().setTrackItemList(mTrackItemList);
+                    trackActivity.getMusicService().setTrackPosition(mPosition);
+                    trackActivity.getMusicService().playTrack();
+                }
+            }
+
+            // Show the now-playing fragment
             DialogFragment playFragment = new PlayFragment();
-            playFragment.setArguments(args);
             playFragment.show(getActivity().getSupportFragmentManager(), "dialog");
         }
     };

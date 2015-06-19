@@ -25,8 +25,8 @@ public class SettingsActivity extends PreferenceActivity
         // Add 'general' preferences, defined in the XML file
         addPreferencesFromResource(R.xml.pref_general);
 
-        // For all preferences, attach an OnPreferenceChangeListener so the UI summary can be
-        // updated when the preference changes.
+        // For the country preference, attach an OnPreferenceChangeListener
+        // so the UI summary can be updated when the preference changes.
         bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_country_key)));
     }
 
@@ -41,6 +41,7 @@ public class SettingsActivity extends PreferenceActivity
 
         // Trigger the listener immediately with the preference's
         // current value.
+
         onPreferenceChange(preference,
                 PreferenceManager
                         .getDefaultSharedPreferences(preference.getContext())
