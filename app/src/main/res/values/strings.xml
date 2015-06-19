@@ -8,7 +8,7 @@
     <string name="artist_not_found">Artist not found :(</string>
     <string name="track_not_found">Track not found :(</string>
     <string name="select_a_track">Select a track to play</string>
-
+    <string name="undefined_external_url">The current track can\'t be shared</string>
 
     <string name="query_hint_artist">Search for an artist</string>
 
@@ -26,8 +26,10 @@
     <string name="content_description_iv_artist">Artist thumbnail</string>
     <string name="content_description_iv_album">Album thumbnail</string>
     <string name="title_activity_play">PlayActivity</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="hello_world">Hello world!</string>S
 
     <string name="share_title">Share the track:</string>
+
+    <string name="zerozero">"00:00"</string>
 
 </resources>

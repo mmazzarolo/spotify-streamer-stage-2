@@ -17,12 +17,6 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/menu_uri_share"
-        android:title="@string/menu_uri_share"
-        android:orderInCategory="102"
-        app:showAsAction="never" />
-
-    <item
         android:id="@+id/menu_now_playing"
         android:title="@string/menu_now_playing"
         android:orderInCategory="80"

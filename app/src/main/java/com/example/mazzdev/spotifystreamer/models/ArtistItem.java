@@ -14,12 +14,6 @@ public class ArtistItem implements Parcelable {
     private String spotifyId;
     private String thumbnailURL;
 
-    public ArtistItem(String name, String spotifyId, String thumbnailURL) {
-        this.name = name;
-        this.spotifyId = spotifyId;
-        this.thumbnailURL = thumbnailURL;
-    }
-
     public ArtistItem(Artist artist) {
         this.name = artist.name;
         this.spotifyId = artist.id;

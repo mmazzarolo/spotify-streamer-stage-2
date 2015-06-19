@@ -3,62 +3,59 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/BaseFragmentDialog" >
+
+<LinearLayout
     style="@style/BaseFragmentDialog"
     android:orientation="vertical"
     android:id="@+id/fragment_play_relativelayout"
     tools:context=".PlayActivityFragment">
 
     <TextView
-        android:text="asdfasdfasdf"
         android:id="@+id/textview_artist"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:gravity="center_horizontal"
         android:textAppearance="?android:textAppearanceMedium"
         android:textStyle="bold"
         android:padding="0dp"/>
 
     <TextView
         android:id="@+id/textview_album"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:gravity="center_horizontal"
         android:textAppearance="?android:textAppearanceSmall"
-        android:textStyle="italic"
-        android:layout_below="@+id/textview_artist" />
+        android:textStyle="italic" />
 
     <ImageView
         android:id="@+id/imageview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_gravity="center_horizontal"
         android:gravity="center_horizontal"
-        android:contentDescription="@string/content_description_iv_album"
-        android:layout_below="@+id/textview_album" />
+        android:contentDescription="@string/content_description_iv_album" />
 
     <TextView
         android:id="@+id/textview_track"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:gravity="center_horizontal"
         android:textAppearance="?android:textAppearanceMedium"
-        android:textStyle="bold"
-        android:layout_above="@+id/linear_layout_seekbar" />
+        android:textStyle="bold" />
 
     <LinearLayout
         android:id="@+id/linear_layout_seekbar"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_above="@+id/linear_layout_controls"
         android:paddingLeft="16dp"
         android:paddingRight="16dp" >
 
         <TextView
-            android:text="00:00"
+            android:text="@string/zerozero"
             android:id="@+id/textview_time_current"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -75,7 +72,7 @@
             />
 
         <TextView
-            android:text="00:00"
+            android:text="@string/zerozero"
             android:id="@+id/textview_time_max"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -90,49 +87,48 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_gravity="center_horizontal"
-        android:gravity="center_horizontal"
-        android:layout_alignParentBottom="true"
-        android:layout_centerInParent="true" >
+        android:gravity="center_horizontal" >
 
         <Button
             android:id="@+id/button_prev"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_margin="8dp"
+            android:layout_width="@dimen/controls_size"
+            android:layout_height="@dimen/controls_size"
+            android:layout_margin="@dimen/controls_margin"
             android:background="@drawable/ic_skip_previous_grey600_48dp" />
 
         <Button
             android:id="@+id/button_play"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_margin="8dp"
+            android:layout_width="@dimen/controls_size"
+            android:layout_height="@dimen/controls_size"
+            android:layout_margin="@dimen/controls_margin"
             android:background="@drawable/ic_play_grey600_48dp" />
 
         <Button
             android:id="@+id/button_stop"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_margin="8dp"
+            android:layout_width="@dimen/controls_size"
+            android:layout_height="@dimen/controls_size"
+            android:layout_margin="@dimen/controls_margin"
             android:background="@drawable/ic_stop_grey600_48dp" />
 
         <Button
             android:id="@+id/button_next"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_margin="8dp"
+            android:layout_width="@dimen/controls_size"
+            android:layout_height="@dimen/controls_size"
+            android:layout_margin="@dimen/controls_margin"
             android:background="@drawable/ic_skip_next_grey600_48dp" />
 
     </LinearLayout>
 
+
+</LinearLayout>
+
     <ProgressBar
         android:id="@+id/progressbar"
         style="@style/ProgressBar"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
         android:layout_height="40dp"
         android:layout_width="40dp"
-        android:layout_gravity="center_horizontal"
-        android:gravity="center_horizontal"
-        android:padding="0dp"/>
+        android:padding="0dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"/>
 
 </RelativeLayout>

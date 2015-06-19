@@ -131,19 +131,17 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
             case R.id.menu_settings:
                 startActivity(new Intent(this, SettingsActivity.class));
                 break;
-            // Share the track preview URL
+            // Share the spotify external URL (if available)
             case R.id.menu_track_share:
                 if (mIsServiceBound && !mMusicService.isEmpty()) {
-                    shareString(mMusicService.getCurrentTrack().getPreviewURL());
-                } else {
-                    CharSequence text = getString(R.string.select_a_track);
-                    showToast(text);
-                }
-                break;
-            // Share the track URI
-            case R.id.menu_uri_share:
-                if (mIsServiceBound && !mMusicService.isEmpty()) {
-                    shareString(mMusicService.getCurrentTrack().getPreviewURL());
+                    String externalSpotifyURL =
+                            mMusicService.getCurrentTrack().getExternalSpotifyURL();
+                    if (externalSpotifyURL != null) {
+                        shareString(externalSpotifyURL);
+                    } else {
+                        CharSequence text = getString(R.string.undefined_external_url);
+                        showToast(text);
+                    }
                 } else {
                     CharSequence text = getString(R.string.select_a_track);
                     showToast(text);
@@ -166,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
     private void shareString(String text) {
         Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
         sharingIntent.setType("text/plain");
-        String subject = "spotify-stramer-stage-2";
+        String subject = "Spotify Streamer";
         sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
         sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, text);
         startActivity(Intent.createChooser(sharingIntent,
@@ -180,7 +178,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
         mToast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
         mToast.show();
     }
-
 
     /**
      * Setting the MusicService Binding

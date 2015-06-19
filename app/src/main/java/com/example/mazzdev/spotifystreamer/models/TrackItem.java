@@ -18,19 +18,9 @@ public class TrackItem implements Parcelable {
     private String artistName;
     private String spotifyId;
     private String thumbnailSmallURL;
-    private String thumbnailLargeURL; // TO-DO: STAGE 2
+    private String thumbnailLargeURL;
     private String previewURL;
-
-    public TrackItem(String trackName, String albumName, String artistName, String spotifyId,
-                     String thumbnailSmallURL, String thumbnailLargeURL, String previewURL) {
-        this.trackName = trackName;
-        this.albumName = albumName;
-        this.artistName = artistName;
-        this.spotifyId = spotifyId;
-        this.thumbnailSmallURL = thumbnailSmallURL;
-        this.thumbnailLargeURL = thumbnailLargeURL;
-        this.previewURL = previewURL;
-    }
+    private String externalSpotifyURL;
 
     public TrackItem(Track track) {
         this.trackName = track.name;
@@ -44,6 +34,10 @@ public class TrackItem implements Parcelable {
             thumbnailSmallURL = searchImage(track.album.images, 200);
             thumbnailLargeURL = searchImage(track.album.images, 640);
         }
+        if (track.external_urls != null) {
+            this.externalSpotifyURL = track.external_urls.get("spotify");
+        }
+
     }
 
     /*
@@ -77,6 +71,7 @@ public class TrackItem implements Parcelable {
         this.thumbnailSmallURL = in.readString();
         this.thumbnailLargeURL = in.readString();
         this.previewURL = in.readString();
+        this.externalSpotifyURL = in.readString();
     }
 
     public String getTrackName() {
@@ -135,6 +130,14 @@ public class TrackItem implements Parcelable {
         this.previewURL = previewURL;
     }
 
+    public String getExternalSpotifyURL() {
+        return externalSpotifyURL;
+    }
+
+    public void setExternalSpotifyURL(String externalSpotifyURL) {
+        this.externalSpotifyURL = externalSpotifyURL;
+    }
+
     public boolean hasSmallThumbnail() {
         return thumbnailSmallURL != null;
     }
@@ -151,6 +154,7 @@ public class TrackItem implements Parcelable {
         out.writeString(thumbnailSmallURL);
         out.writeString(thumbnailLargeURL);
         out.writeString(previewURL);
+        out.writeString(externalSpotifyURL);
     }
 
     public static final Parcelable.Creator<TrackItem> CREATOR = new Parcelable.Creator<TrackItem>() {

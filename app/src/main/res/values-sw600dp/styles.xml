@@ -2,4 +2,14 @@
     <style name="ArtistItemListStyle">
         <item name="android:choiceMode">singleChoice</item>
     </style>
+
+    <style name="BaseRelativeLayout">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:paddingLeft">0dp</item>
+        <item name="android:paddingRight">0dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
 </resources>

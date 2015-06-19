@@ -112,9 +112,6 @@ public class PlayFragment extends DialogFragment {
         if (imageView != null && mMusicService.getCurrentTrack().hasLargeThumbnail()) {
             Picasso.with(getActivity())
                     .load(mMusicService.getCurrentTrack().getThumbnailLargeURL())
-                    .resize(400, 400)
-                    .placeholder(R.drawable.ic_music_note_grey600_48dp)
-                    .error(R.drawable.ic_music_note_grey600_48dp)
                     .into(imageView);
         }
         // Setting the play/pause button
@@ -170,6 +167,8 @@ public class PlayFragment extends DialogFragment {
     public void onPause(){
         super.onPause();
         // Unregistering the broadcast receiver
+        // Using a try & catch, hint by:
+        // http://stackoverflow.com/questions/6165070/receiver-not-registered-exception-error
         try {
             getActivity().unregisterReceiver(mBroadcastReceiver);
             mBroadcastReceiver = null;
