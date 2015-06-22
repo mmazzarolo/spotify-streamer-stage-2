@@ -1,10 +1,27 @@
 <resources>
 
+    <!-- Base application theme -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/material_blue_500</item>
         <item name="colorPrimaryDark">@color/material_blue_700</item>
     </style>
 
+    <!-- Main activity theme -->
+    <style name="MainTheme" parent="AppTheme">
+        <item name="actionBarStyle">@style/ActionBarLogo</item>
+    </style>
+
+    <!-- Main activity actionbar style -->
+    <style name="ActionBarLogo" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+        <item name="logo">@drawable/ic_bookmark_music_white_48dp</item>
+        <item name="displayOptions">useLogo|showHome|showTitle</item>
+    </style>
+
+    <!-- Settings theme -->
+    <style name="SettingsTheme" parent="AppTheme">
+    </style>
+
+    <!-- View themes -->
     <style name="BaseFragmentDialog">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">match_parent</item>
@@ -22,12 +39,10 @@
     <style name="MsgTheme">
         <item name="android:paddingTop">@dimen/padding_from_top</item>
         <item name="android:textStyle">bold</item>
-        <!--<item name="android:textSize">@dimen/msg_size</item>-->
         <item name="android:textAppearance">?android:textAppearanceMedium</item>
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_centerInParent">true</item>
-        <!--<item name="android:textColor">@color/primary_text_default_material_dark</item>-->
     </style>
 
     <style name="ProgressBar">
@@ -42,8 +57,6 @@
     </style>
 
     <!-- Settings activity theme. -->
-    <style name="SettingsTheme" parent="AppTheme">
-    </style>
 
 
 </resources>

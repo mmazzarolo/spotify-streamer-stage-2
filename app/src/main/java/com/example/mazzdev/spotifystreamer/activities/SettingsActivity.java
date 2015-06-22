@@ -14,7 +14,7 @@ import com.example.mazzdev.spotifystreamer.R;
 /**
  * Created by Matteo on 08/06/2015.
  * Just a simple settings activity.
- * No validation at the moment, maybe it will be added in Stage2.
+ * No validation at the moment, maybe it will be added later.
  */
 public class SettingsActivity extends PreferenceActivity
         implements Preference.OnPreferenceChangeListener {
@@ -41,7 +41,6 @@ public class SettingsActivity extends PreferenceActivity
 
         // Trigger the listener immediately with the preference's
         // current value.
-
         onPreferenceChange(preference,
                 PreferenceManager
                         .getDefaultSharedPreferences(preference.getContext())

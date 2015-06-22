@@ -5,6 +5,19 @@
     tools:context=".TrackActivity">
 
     <item
+        android:id="@+id/menu_now_playing"
+        android:title="@string/menu_now_playing"
+        android:orderInCategory="80"
+        android:icon="@drawable/ic_headphones_white_48dp"
+        app:showAsAction="ifRoom" />
+
+    <item android:id="@+id/menu_search"
+        android:title="@string/app_name"
+        android:icon="@android:drawable/ic_menu_search"
+        app:showAsAction="always"
+        app:actionViewClass="android.support.v7.widget.SearchView"/>
+
+    <item
         android:id="@+id/menu_settings"
         android:title="@string/menu_settings"
         android:orderInCategory="100"
@@ -15,12 +28,5 @@
         android:title="@string/menu_track_share"
         android:orderInCategory="101"
         app:showAsAction="never" />
-
-    <item
-        android:id="@+id/menu_now_playing"
-        android:title="@string/menu_now_playing"
-        android:orderInCategory="80"
-        android:icon="@drawable/ic_headphones_white_48dp"
-        app:showAsAction="ifRoom" />
 
 </menu>

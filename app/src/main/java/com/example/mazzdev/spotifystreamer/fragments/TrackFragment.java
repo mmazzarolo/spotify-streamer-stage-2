@@ -113,7 +113,7 @@ public class TrackFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             mPosition = position;
-            boolean hasTwoPanes = getResources().getBoolean(R.bool.has_two_panes);
+            boolean hasTwoPanes = getActivity().findViewById(R.id.main_container) != null;
 
             // In two-pane mode, we are in the MainActivity activity
             if (hasTwoPanes) {

@@ -1,5 +1,6 @@
 package com.example.mazzdev.spotifystreamer.activities;
 
+import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -7,13 +8,14 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.example.mazzdev.spotifystreamer.R;
-import com.example.mazzdev.spotifystreamer.Utility;
 import com.example.mazzdev.spotifystreamer.fragments.MainFragment;
 import com.example.mazzdev.spotifystreamer.fragments.PlayFragment;
 import com.example.mazzdev.spotifystreamer.fragments.TrackFragment;
@@ -26,10 +28,13 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
     private static final String TRACKFRAGMENT_TAG = "TFTAG";
 
     private boolean mHasTwoPanes;
-    private String mCountry;
+    private MainFragment mainFragment;
     private MusicService mMusicService;
     private boolean mIsServiceBound = false;
     private Toast mToast;
+    private String mSearched;
+
+    private static final String ARTIST_SEARCHED_KEY = "ARTIST_SEARCHED";
 
     /**
      * Activity lifecycle methods
@@ -39,21 +44,52 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Setting the country preference from the setting
-        mCountry = Utility.getPreferredCountry(this);
-
         // Is the app running on a tablet?
-        mHasTwoPanes = getResources().getBoolean(R.bool.has_two_panes);
+        mHasTwoPanes = findViewById(R.id.main_container) != null;
 
         // In two-pane mode, show the detail view in this activity by adding or replacing
         // the detail fragment using a fragment transaction
         if (mHasTwoPanes) {
-
             if (savedInstanceState == null) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.track_container, new TrackFragment(), TRACKFRAGMENT_TAG)
                         .commit();
             }
+        }
+
+        // Restoring the ListView (if the activity has been re-created)
+        if (savedInstanceState != null) {
+            mSearched = savedInstanceState.getString(ARTIST_SEARCHED_KEY);
+        }
+
+        // Get the main fragment of this activity
+        mainFragment =
+                (MainFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_main);
+
+        // Handling search intent
+        handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        // Get the intent, verify the action and get the query
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            String query = intent.getStringExtra(SearchManager.QUERY);
+            mainFragment.searchArtist(query);
+            mSearched = query;
+        }
+    }
+
+    // Saving the current parcelable item list
+    @Override
+    public void onSaveInstanceState(Bundle savedState) {
+        super.onSaveInstanceState(savedState);
+        if (mSearched != null) {
+            savedState.putString(ARTIST_SEARCHED_KEY, mSearched);
         }
     }
 
@@ -71,21 +107,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
         super.onStop();
         // Unbinding the service
         unbindService(mServiceConnection);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        String country = Utility.getPreferredCountry(this);
-        // Update the new country location
-        if (country != null && !country.equals(mCountry)) {
-            MainFragment mainFragment =
-                    (MainFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_main);
-            if (null != mainFragment) {
-                mainFragment.onCountryChanged();
-            }
-            mCountry = country;
-        }
     }
 
     /**
@@ -120,6 +141,21 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        // Get the SearchView and set the searchable configuration
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        MenuItem searchItem = menu.findItem(R.id.menu_search);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+
+        // Assumes current activity is the searchable activity
+        if (searchView != null) {
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+//            searchView.setIconifiedByDefault(false);
+            if (mSearched != null) {
+                searchView.setQuery(mSearched, false);
+            }
+        }
+
         return true;
     }
 
@@ -182,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Call
     /**
      * Setting the MusicService Binding
      */
-    private ServiceConnection mServiceConnection = new ServiceConnection(){
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Saving an istance of the binded service

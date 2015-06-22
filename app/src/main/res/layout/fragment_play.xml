@@ -12,7 +12,7 @@
     tools:context=".PlayActivityFragment">
 
     <TextView
-        android:id="@+id/textview_artist"
+        android:id="@+id/textview_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"

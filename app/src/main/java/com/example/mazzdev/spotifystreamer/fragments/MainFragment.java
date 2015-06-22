@@ -4,7 +4,6 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,10 +13,10 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.support.v7.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
 
 import com.example.mazzdev.spotifystreamer.R;
+import com.example.mazzdev.spotifystreamer.Utility;
 import com.example.mazzdev.spotifystreamer.adapters.ArtistListAdapter;
 import com.example.mazzdev.spotifystreamer.models.ArtistItem;
 
@@ -40,18 +39,16 @@ import retrofit.RetrofitError;
  */
 public class MainFragment extends Fragment {
 
-    private ArrayList<ArtistItem> mArtistItemList;
+    private ArrayList<ArtistItem> mArtistItemList = new ArrayList<>();
     private ArtistListAdapter mArtistListAdapter;
-    private int mPosition;
-    private String mArtist;
+    private int mPosition = ListView.INVALID_POSITION;
 
     private static final String ARTIST_ITEM_LIST_KEY = "ARTIST_ITEM_LIST";
     private static final String ARTIST_POSITION_KEY = "ARTIST_POSITION";
 
     @InjectView(R.id.listview_artist) ListView listViewArtist;
-    @InjectView(R.id.textview_artist) TextView textViewArtist;
+    @InjectView(R.id.textview_message) TextView textViewMessage;
     @InjectView(R.id.progressbar_artist) ProgressBar progressBarArtist;
-    @InjectView(R.id.searchview_artist) SearchView searchViewArtist;
 
     /**
      * A callback interface that all activities containing this fragment must
@@ -66,15 +63,10 @@ public class MainFragment extends Fragment {
     public void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Restoring the ListView (if the activity has been re-created)
-        if (savedInstanceState == null || !savedInstanceState.containsKey(ARTIST_ITEM_LIST_KEY)) {
-            mArtistItemList = new ArrayList<ArtistItem>();
-        } else {
+        if (savedInstanceState != null &&
+                savedInstanceState.containsKey(ARTIST_ITEM_LIST_KEY) &&
+                savedInstanceState.containsKey(ARTIST_POSITION_KEY)) {
             mArtistItemList = savedInstanceState.getParcelableArrayList(ARTIST_ITEM_LIST_KEY);
-        }
-        // Restoring the selected position (if the activity has been re-created)
-        if (savedInstanceState == null || !savedInstanceState.containsKey(ARTIST_POSITION_KEY)) {
-            mPosition = ListView.INVALID_POSITION;
-        } else {
             mPosition = savedInstanceState.getInt(ARTIST_POSITION_KEY);
         }
     }
@@ -92,31 +84,15 @@ public class MainFragment extends Fragment {
                 getActivity(),
                 R.layout.list_item_artist,
                 mArtistItemList);
-
         listViewArtist.setAdapter(mArtistListAdapter);
-
-        // Fix for smoothScrollToPosition suggested here:
-        // http://stackoverflow.com/a/18133295/4836602
-        listViewArtist.post(new Runnable() {
-            @Override
-            public void run() {
-                listViewArtist.smoothScrollToPosition(mPosition);
-            }
-        });
-
+        listViewArtist.post(() -> listViewArtist.smoothScrollToPosition(mPosition));
         listViewArtist.setOnItemClickListener(onArtistItemClickListener);
-
-        searchViewArtist.setOnQueryTextListener(onQueryTextListener);
+        listViewArtist.setEmptyView(textViewMessage);
 
         return rootView;
     }
 
-    /*
-    * When the user clicks on an item the activity starts a new intent.
-    * The parameters of the intent are:
-    * EXTRA_SPOTIFY_ID --> String with the spotifyID of the artist;
-    * EXTRA_ARTIST_NAME --> String with the artist name (used in the titlebar only).
-    */
+    // When the user clicks on an item the activity starts a new intent.
     private OnItemClickListener onArtistItemClickListener = new OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
@@ -126,48 +102,25 @@ public class MainFragment extends Fragment {
         }
     };
 
-    // Starts a search for the artist when the search button is clicked
-    // // Only one search every seond to avoid key-down & key-up
-    private OnQueryTextListener onQueryTextListener = new OnQueryTextListener() {
-        @Override
-        public boolean onQueryTextSubmit(String query) {
-            mArtist = query;
-            searchArtist(mArtist);
-            return true;
-        }
-
-        @Override
-        public boolean onQueryTextChange(String newText) {
-            return false;
-        }
-    };
-
     // Saving the current parcelable item list
     @Override
     public void onSaveInstanceState(Bundle savedState) {
+        super.onSaveInstanceState(savedState);
         savedState.putParcelableArrayList(ARTIST_ITEM_LIST_KEY, mArtistItemList);
         savedState.putInt(ARTIST_POSITION_KEY, mPosition);
-        super.onSaveInstanceState(savedState);
     }
 
-    // since we read the location when we create the loader, all we need to do is restart things
-    public void onCountryChanged() {
-        searchArtist(mArtist);
-    }
-
-    private void searchArtist(String artist) {
-        if (mArtist != null) {
+    public void searchArtist(String artist) {
+        mArtistListAdapter.clear();
+        if (Utility.isNetworkAvailable(getActivity())) {
             FetchArtistTask artistTask = new FetchArtistTask();
             artistTask.execute(artist);
+        } else {
+            textViewMessage.setText(R.string.no_connection);
         }
     }
 
-    /* AsyncTask for the artist search
-    * Can be replaced with an asynchronous call of the API wrapper.
-    * https://github.com/kaaes/spotify-web-api-android
-    * AsyncTask is requested by the mocks:
-    * "Fetch data from Spotify in the background using AsyncTask and The Spotify Web API Wrapper"
-    */
+    // AsyncTask for the artist search
     public class FetchArtistTask extends AsyncTask<String, Void, ArtistsPager> {
 
         private final String LOG_TAG = FetchArtistTask.class.getSimpleName();
@@ -175,9 +128,8 @@ public class MainFragment extends Fragment {
         @Override
         protected void onPreExecute() {
             // Clearing the list, showing the progress bar and hiding the msg
-            mArtistListAdapter.clear();
             progressBarArtist.setVisibility(View.VISIBLE);
-            textViewArtist.setVisibility(View.GONE);
+//            textViewMessage.setVisibility(View.GONE);
         }
 
         @Override
@@ -213,7 +165,6 @@ public class MainFragment extends Fragment {
                     // Hiding the keyboard
                     InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(
                             Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(searchViewArtist.getWindowToken(), 0);
                     // Fetching every artist
                     for(Artist artist : results.artists.items) {
                         mArtistItemList.add(new ArtistItem(artist));
@@ -223,10 +174,12 @@ public class MainFragment extends Fragment {
                     mArtistListAdapter.notifyDataSetChanged();
                 } else {
                     // Artist not found: showing a msg
-                    textViewArtist.setVisibility(View.VISIBLE);
+//                    textViewMessage.setVisibility(View.VISIBLE);
+                    textViewMessage.setText(R.string.artist_not_found);
                 }
             }
         }
+
     }
 
 }

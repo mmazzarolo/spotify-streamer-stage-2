@@ -7,6 +7,7 @@
 
     <string name="artist_not_found">Artist not found :(</string>
     <string name="track_not_found">Track not found :(</string>
+    <string name="no_connection">Not connected to a network</string>
     <string name="select_a_track">Select a track to play</string>
     <string name="undefined_external_url">The current track can\'t be shared</string>
 
@@ -30,5 +31,9 @@
     <string name="share_title">Share the track:</string>
 
     <string name="zerozero">"00:00"</string>
+
+    <string name="search_hint">"Search artist"</string>
+
+
 
 </resources>

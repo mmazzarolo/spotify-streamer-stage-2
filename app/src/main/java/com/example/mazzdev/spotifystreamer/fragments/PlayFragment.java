@@ -42,7 +42,7 @@ public class PlayFragment extends DialogFragment {
     private boolean mIsServiceBound = false;
 
     @InjectView(R.id.imageview) ImageView imageView;
-    @InjectView(R.id.textview_artist) TextView textViewArtist;
+    @InjectView(R.id.textview_message) TextView textViewArtist;
     @InjectView(R.id.textview_album) TextView textViewAlbum;
     @InjectView(R.id.textview_track) TextView textViewTrack;
     @InjectView(R.id.textview_time_current) TextView textViewTimeCurrent;
@@ -144,7 +144,7 @@ public class PlayFragment extends DialogFragment {
         getActivity().startService(intent);
         getActivity().bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
         // Setting the width of the dialog programmatically
-        boolean hasTwoPanes = getResources().getBoolean(R.bool.has_two_panes);
+        boolean hasTwoPanes = getActivity().findViewById(R.id.main_container) != null;
         if (!hasTwoPanes) {
             Dialog dialog = getDialog();
             if (dialog != null) {
